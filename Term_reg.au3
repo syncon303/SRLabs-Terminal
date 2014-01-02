@@ -196,6 +196,10 @@ EndFunc
 
 Func regReadMacros()
     Local $err = 0, $no
+    $ShowMacros = RegRead($REG_ROOT , "ShowMacros")
+    If @error Then
+	$ShowMacros = 0
+    Endif
     For $i = 0 To $MACRO_NUMBER - 1
 	$no = $i + 1
 	If StringLen($no) = 1 Then $no = "0" & $no
@@ -221,6 +225,9 @@ Func regReadMacros()
     Next
 EndFunc
 
+Func regStoreMacroVisibility()
+        RegWrite ( $REG_ROOT , "ShowMacros", "REG_SZ", $ShowMacros )
+EndFunc
 
 
 Func registryError($_err)

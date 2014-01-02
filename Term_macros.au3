@@ -81,16 +81,9 @@ EndFunc
 
 
 Func toggleMacrosView ()
-    Local $wPos = WinGetPos("[active]")
     $ShowMacros = 1 - $ShowMacros
-    If $ShowMacros = 1 Then
-	WinMove("[active]","",$wPos[0],$wPos[1],$wPos[2]+$MACRO_WIN_WIDTH+4,$wPos[3])
-	GUICtrlSetData($bMacroWindow,"Hide Macros <-")
-    Else
-	WinMove("[active]","",$wPos[0],$wPos[1],$wPos[2]-$MACRO_WIN_WIDTH-4,$wPos[3])
-	GUICtrlSetData($bMacroWindow,"Show Macros ->")
-    EndIf
     macrosVisible($ShowMacros)
+    regStoreMacroVisibility()
 EndFunc
 
 
@@ -235,7 +228,7 @@ EndFunc
 Func macroEventSend()
     Local $DEBUG = 1
     For $i = 0 To $MACRO_NUMBER - 1
-	If @GUI_CTRLID = $bMcrSend[$i] Then
+	If @GUI_CTRLID = $bMcrSend[$i] Or @GUI_CTRLID = $iMcr[$i] Then
 	    If $DEBUG Then ConsoleWrite("Send macro " & $i & ",data: " &$macroStrCat[$i][0]&@CRLF)
 	    Return macroSend($i)
 	EndIf
@@ -260,7 +253,15 @@ EndFunc
 
 Func macrosVisible($_on)
     Local $i, $task = $GUI_HIDE
+    Local $wPos = WinGetPos("SRLabs Terminal")
     If $_on Then $task = $GUI_SHOW
+    If $_on = 1 Then
+	WinMove("SRLabs Terminal","",$wPos[0],$wPos[1],$GUI_width+$MACRO_WIN_WIDTH+4,$GUI_height)
+	GUICtrlSetData($bMacroWindow,"Hide Macros <-")
+    Else
+	WinMove("SRLabs Terminal","",$wPos[0],$wPos[1],$GUI_width,$GUI_height)
+	GUICtrlSetData($bMacroWindow,"Show Macros ->")
+    EndIf
     For $i = 0 To $MACRO_NUMBER - 1
 	adjustMacroInput($_on,$i)
 	GUICtrlSetState($bMcrSend[$i],$task)

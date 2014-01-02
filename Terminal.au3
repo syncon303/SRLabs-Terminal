@@ -58,6 +58,7 @@ Global Const $REG_ROOT = "HKEY_CURRENT_USER\Software\SRLabs\Terminal"
 ;~ Global $hVISAdll
 ;~ #include "visa_functions.au3"
 
+Global Const $MACRO_NUMBER = 27
 Global $ShowMacros = 0
 
 Global $VISA32_AVAILABLE = 0
@@ -126,19 +127,26 @@ Func captureENTER()
     Local $a
     $a = ControlGetHandle ($Terminal, "", ControlGetFocus($Terminal))
     $a = _WinAPI_GetDlgCtrlID($a)
-    If $a <> $inputTX Then
-	HotKeySet("{ENTER}")
-	Send("{ENTER}")
-	HotKeySet("{ENTER}", "captureENTER")
+    If $a = $inputTX Then
+;~     ConsoleWrite("ENTER!!!" & @CRLF)
+	sendInputData()
 	Return
     EndIf
-;~     ConsoleWrite("ENTER!!!" & @CRLF)
-    sendInputData()
+    For $i = 0 To $MACRO_NUMBER - 1
+	If $a = $iMcr[$i] Then
+	    macroSend($i)
+	    Return
+	EndIf
+    Next
+    HotKeySet("{ENTER}")
+    Send("{ENTER}")
+    HotKeySet("{ENTER}", "captureENTER")
+    Return
 
 EndFunc
 
 #Region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
-$Terminal = GUICreate("Terminal", 654, 666, 187, 128, -1, -1, $TermMain)
+$Terminal = GUICreate("SRLabs Terminal", 654, 666, -1, -1, -1, -1)
 $Connection = GUICtrlCreateGroup("", 0, 0, 125, 65)
 $rCOM = GUICtrlCreateRadio("COM", 4, 12, 41, 17)
 $rLAN = GUICtrlCreateRadio("LAN", 4, 28, 45, 17)
@@ -222,7 +230,6 @@ GUISetState(@SW_SHOW)
 If $VISA32_AVAILABLE = 0 Then GUICtrlSetState($rVISA,$GUI_HIDE)
 
 
-Global Const $MACRO_NUMBER = 27
 Global Const $MCR_GRP_TOP = 0, $MCR_GRP_LEFT = 654+3, $MCR_GRP_WIDTH = 340, $MCR_ROW_HEIGHT = 24,$MACRO_WIN_WIDTH = $MCR_GRP_WIDTH
 Global $iMcr[$MACRO_NUMBER], $iMcrP[2][$MACRO_NUMBER], $bMcrSend[$MACRO_NUMBER], $iMcrRT[$MACRO_NUMBER], $checkMcrRsend[$MACRO_NUMBER]
 Global $MACRO_INPUT_W = 241, $MACRO_INPUT_DIFF = 36
@@ -250,7 +257,7 @@ For $i = 0 To $MACRO_NUMBER - 1
     $macroParVisible[$i][0] = 0
     $macroParVisible[$i][1] = 0
     GUICtrlSetOnEvent($bMcrSend[$i],"macroEventSend")
-
+    GUICtrlSetOnEvent($iMcr[$i],"macroEventSend")
 Next
 
 For $i = 0 To $MACRO_NUMBER - 1
@@ -260,8 +267,6 @@ For $i = 0 To $MACRO_NUMBER - 1
     $macroStrPar[$i][0] = ""
     $macroStrPar[$i][1] = ""
 Next
-
-
 
 
 ;~ $macroParVisible[1][0] = 1
@@ -286,7 +291,7 @@ GUICtrlSetOnEvent($cCOM,"changeCOMport")
 
 GUICtrlSetOnEvent($bConnect,"toggleConnection")
 GUICtrlSetOnEvent($bMacroWindow,"toggleMacrosView")
-GUICtrlSetOnEvent($cClearRX,"toggleMacrosView")
+GUICtrlSetOnEvent($cClearRX,"clearRXbuffer")
 
 GUICtrlSetOnEvent($bLoadMacro,"readMacroFile")
 GUICtrlSetOnEvent($bSaveMacro,"writeMacroFile")
@@ -294,6 +299,16 @@ GUICtrlSetOnEvent($bSaveMacro,"writeMacroFile")
 
 Opt("GUIOnEventMode", 1)
 
+Global $GUI_width, $GUI_height
+Global $GUIdimensions = WinGetPos("SRLabs Terminal")
+If Not @error Then
+    $GUI_width = $GUIdimensions[2]
+    $GUI_height = $GUIdimensions[3]
+Else
+    ConsoleWrite (" Can't get window dimensions, setting random defaults!" & @CRLF)
+    $GUI_width = 654
+    $GUI_height = 666
+EndIf
 regLoadDirectories()
 storeAccelerators()
 scanCOMports()
@@ -302,6 +317,7 @@ regLoadLAN()
 If $VISA32_AVAILABLE Then regLoadVISA()
 regLoadRXheadTail()
 regReadMacros()
+macrosVisible($ShowMacros)
 
 Local $temp
 While 1
