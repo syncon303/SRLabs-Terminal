@@ -28,7 +28,6 @@ Global $__use_convert_au3 = 1
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
 #include <GuiComboBox.au3>
-#include <Visa.au3>
 #include "COMMs.au3"
 
 
@@ -42,7 +41,8 @@ Global $Terminal, $inputTX, $termMain
 
 Global $COMlist[200], $COMcount = 0, $curCOM = 0
 Global $hCOM
-Global $history[200],$histFirst = 0, $histLast = 0, $histCur = 0
+Global $history[200],$histFirst = 0, $histLast = 0, $histCur = 0, $noHist = true
+Global $histLastString = ""
 Global $ConOpen = $connectNone
 Global $editTXcount = 0, $editRXcount = 0
 
@@ -55,16 +55,23 @@ Global $macroDirectory = @WorkingDir, $logDirectory = @WorkingDir
 
 Global Const $REG_ROOT = "HKEY_CURRENT_USER\Software\SRLabs\Terminal"
 
-;~ Global $hVISAdll
-;~ #include "visa_functions.au3"
+Global $hVISAdll = 0
+;~ $hVISAdll = "visa32.dll"
+;~ $hVISAdll = DllOpen("visa32.dll")
+#include "visa_functions.au3"
+;~ #include <Visa.au3>
 
 Global Const $MACRO_NUMBER = 27
+Global $iMcr[$MACRO_NUMBER], $iMcrP[2][$MACRO_NUMBER], $bMcrSend[$MACRO_NUMBER], $iMcrRT[$MACRO_NUMBER], $checkMcrRsend[$MACRO_NUMBER]
+
+
 Global $ShowMacros = 0
 
 Global $VISA32_AVAILABLE = 0
-$hVISA32 = DllOpen("visa32.dll")
-If $hVISA32 <> -1 Then
-    DLLclose($hVISA32)
+$hVISAdll = DllOpen("visa32.dll")
+
+If $hVISAdll <> -1 Then
+    DLLclose($hVISAdll)
     $VISA32_AVAILABLE = 1
 EndIf
 
@@ -114,6 +121,9 @@ Func captureDOWN()
 ;~     ConsoleWrite("DOWN!!!" & @CRLF)
     historyNext()
 EndFunc
+
+
+HotKeySet("^{DEL}", "clearRXbuffer") ; CTRL+DEL clears RX input box
 
 
 HotKeySet("{ENTER}", "captureENTER")
@@ -231,7 +241,6 @@ If $VISA32_AVAILABLE = 0 Then GUICtrlSetState($rVISA,$GUI_HIDE)
 
 
 Global Const $MCR_GRP_TOP = 0, $MCR_GRP_LEFT = 654+3, $MCR_GRP_WIDTH = 340, $MCR_ROW_HEIGHT = 24,$MACRO_WIN_WIDTH = $MCR_GRP_WIDTH
-Global $iMcr[$MACRO_NUMBER], $iMcrP[2][$MACRO_NUMBER], $bMcrSend[$MACRO_NUMBER], $iMcrRT[$MACRO_NUMBER], $checkMcrRsend[$MACRO_NUMBER]
 Global $MACRO_INPUT_W = 241, $MACRO_INPUT_DIFF = 36
 
 Global $macroParVisible[$MACRO_NUMBER][2]
@@ -525,64 +534,4 @@ Func isIP ($_s)
     Return 1
 EndFunc
 
-
-Func checkHistory($_str)
-    If $histFirst = $histLast Then
-	newHistory($_str)
-	Return
-    ElseIf StringLen($_str) = 0 Or $_str = $history[$histCur] Then
-	Return ; Unchanged string
-    Else
-	newHistory($_str)
-	Return
-    EndIf
-EndFunc
-
-
-Func newHistory($_str)
-    Local $incFirst = incHistPointer($histFirst)
-    Local $incLast = incHistPointer($histLast)
-    Local $dblLast = incHistPointer($incLast)
-    If $dblLast = $histFirst Then
-	; history full
-	$histFirst = $incFirst
-    EndIf
-    $history[$histLast] = $_str
-    $histLast = $incLast
-    $histCur = $histLast
-    $history[$histLast] = ""
-    Return
-EndFunc
-
-
-Func historyNext()
-    Local $incCur = incHistPointer($histCur)
-    If $histCur = $histLast then Return
-    $histCur = $incCur
-    GUICtrlSetData ($InputTX, $history[$histCur])
-    Return
-EndFunc
-
-
-Func historyPrev()
-    Local $decCur = decHistPointer($histCur)
-    If $histCur = $histFirst then Return
-    If $histCur = $histLast Then
-	$history[$histLast] = GUICtrlRead($InputTX)
-    EndIf
-    $histCur = $decCur
-    GUICtrlSetData ($InputTX, $history[$histCur])
-    Return
-EndFunc
-
-
-Func incHistPointer($_p)
-    If $_p = UBound($history)-1 Then Return 0
-    Return ($_p + 1)
-EndFunc
-
-
-Func decHistPointer($_p)
-    If $_p = 0 Then Return (UBound($history) - 1)
-    Return ($_p - 1)
-EndFunc
+#include "Term_hist.au3"

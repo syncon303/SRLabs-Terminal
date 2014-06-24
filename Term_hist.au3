@@ -3,36 +3,42 @@
 ; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
 
 
+
 Func checkHistory($_str)
-    If $histFirst = $histLast Then
-	newHistory($_str)
-	Return
-    ElseIf StringLen($_str) = 0 Or $_str = $history[$histCur] Then
+    If StringLen($_str) = 0 Or $_str == $histLastString Or $_str == $history[decHistPointer($histLast)] Then
 	Return ; Unchanged string
-    Else
-	newHistory($_str)
-	Return
     EndIf
+;~     If $noHist then
+;~ 	newHistory($_str)
+;~ 	Return
+;~     EndIf
+    newHistory($_str)
+    Return
 EndFunc
 
 Func newHistory($_str)
     Local $incFirst = incHistPointer($histFirst)
     Local $incLast = incHistPointer($histLast)
-    Local $dblLast = incHistPointer($incLast)
-    If $dblLast = $histFirst Then
-	; history full
+    If $histFirst = incHistPointer($incLast) Then ; detect buffer overflow
+	; history full, roll first history forward
+	if $histFirst = $histCur Then $histCur = $incFirst
 	$histFirst = $incFirst
     EndIf
     $history[$histLast] = $_str
-    $histLast = $incLast
-    $histCur = $histLast
-    $history[$histLast] = ""
+    If $histLast = incHistPointer($histCur) then $histCur = $histLast
+    $histLast = $incLast ; increment last history position
+;    $histCur = $histLast
+;    $history[$histLast] = ""
     Return
 EndFunc
 
 Func historyNext()
     Local $incCur = incHistPointer($histCur)
-    If $histCur = $histLast then Return
+;    If $noHist = true then Return ; last command was sent and no history is selected
+    If $incCur = $histLast then
+	if $noHist = true then $noHist = False
+	Return
+    EndIf
     $histCur = $incCur
     GUICtrlSetData ($InputTX, $history[$histCur])
     Return
@@ -40,10 +46,15 @@ EndFunc
 
 Func historyPrev()
     Local $decCur = decHistPointer($histCur)
-    If $histCur = $histFirst then Return
-    If $histCur = $histLast Then
-	$history[$histLast] = GUICtrlRead($InputTX)
+    if $noHist = true Then
+	$noHist = False
+	GUICtrlSetData ($InputTX, $history[$histCur])
+	Return
     EndIf
+    If $histCur = $histFirst then Return
+;    If $histCur = $histLast Then
+;	$history[$histLast] = GUICtrlRead($InputTX)
+;    EndIf
     $histCur = $decCur
     GUICtrlSetData ($InputTX, $history[$histCur])
     Return

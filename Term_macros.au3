@@ -6,7 +6,7 @@
 Func readMacroFile()
     Local $path
     Local $hFile, $expectMacro = 1, $par = 0, $skip = 0, $no, $a
-    $path = FileOpenDialog ( "Open macro file", $macroDirectory, "Macro file (*.tmf)",3,"*.tmf")
+    $path = FileOpenDialog ( "Open macro file", $macroDirectory, "Macro file (*.tmf)|Text files (*.txt)|All files (*.*)",3,"*.tmf")
     If @error Or $path = "" Then Return -1
     $hFile = FileOpen ($path, 0)
     If @error Then Return -2
@@ -228,7 +228,7 @@ EndFunc
 Func macroEventSend()
     Local $DEBUG = 1
     For $i = 0 To $MACRO_NUMBER - 1
-	If @GUI_CTRLID = $bMcrSend[$i] Or @GUI_CTRLID = $iMcr[$i] Then
+	If @GUI_CTRLID = $bMcrSend[$i] Then ;Or @GUI_CTRLID = $iMcr[$i] Then
 	    If $DEBUG Then ConsoleWrite("Send macro " & $i & ",data: " &$macroStrCat[$i][0]&@CRLF)
 	    Return macroSend($i)
 	EndIf
@@ -236,18 +236,18 @@ Func macroEventSend()
 EndFunc
 
 Func macroSend($_no)
-    Local $str
+    Local $mp1 = "", $mp2 = ""
 ;~     If $ConOpen = $connectNone Then Return
     $str = $macroStrCat[$_no][0]
     If $macroParVisible[$_no][0] Then
-	$str &= $macroStrPar[$_no][$macroParVisible[$_no][0]-1]
-	$str &= $macroStrCat[$_no][1]
+	$mp1 &= $macroStrPar[$_no][0]
     EndIf
     If $macroParVisible[$_no][1] Then
-	$str &= $macroStrPar[$_no][$macroParVisible[$_no][1]-1]
-	$str &= $macroStrCat[$_no][2]
+	$mp2 &= $macroStrPar[$_no][1]
     EndIf
-    Return sendData($str)
+    ; parse string
+;    Return sendData($str)
+    Return parseString($macroString[$_no], $mp1, $mp2)
 EndFunc
 
 
