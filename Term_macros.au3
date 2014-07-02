@@ -6,7 +6,9 @@
 Func readMacroFile()
     Local $path
     Local $hFile, $expectMacro = 1, $par = 0, $skip = 0, $no, $a
-    $path = FileOpenDialog ( "Open macro file", $macroDirectory, "Macro file (*.tmf)|Text files (*.txt)|All files (*.*)",3,"*.tmf")
+    HotKeySet("{ENTER}")
+    $path = FileOpenDialog ( "Open macro file", $macroDirectory, "Macro file (*.tmf)|Text files (*.txt)|All files (*.*)",3,"*.tmf", $Terminal)
+    HotKeySet("{ENTER}", "captureENTER")
     If @error Or $path = "" Then Return -1
     $hFile = FileOpen ($path, 0)
     If @error Then Return -2
@@ -55,8 +57,11 @@ EndFunc
 Func writeMacroFile()
     Local $writePars = 1
     Local $path, $hFile, $i
-    $path = FileSaveDialog ( "Save macro file", $macroDirectory, "Macro file (*.tmf)",16,"*.tmf")
+    HotKeySet("{ENTER}")
+    $path = FileSaveDialog ( "Save macro file", $macroDirectory, "Macro file (*.tmf)",16,"*.tmf", $Terminal)
+    HotKeySet("{ENTER}", "captureENTER")
     If @error Or $path = "" Then Return -1
+    If StringRight ($path,4) <> ".tmf" then $path = $path & ".tmf"
     $hFile = FileOpen ($path, 10)
     If @error Then Return -2
     $path = extractPath($path)
@@ -248,6 +253,33 @@ Func macroSend($_no)
     ; parse string
 ;    Return sendData($str)
     Return parseString($macroString[$_no], $mp1, $mp2)
+EndFunc
+
+Func macroRepeatSend ()
+    Local $i
+    For $i = 0 To $MACRO_NUMBER - 1
+	If @GUI_CTRLID = $checkMcrRsend[$i] Then
+	    ExitLoop
+	EndIf
+    Next
+    ; if new macro is enable while previous was selected, radio button the check boxes and exit
+    If $mcrRepeat = true and $i <> $mcrRptCur Then
+	GUICtrlSetState($checkMcrRsend[$mcrRptCur],$GUI_UNCHECKED)
+;	GUICtrlSetState($checkMcrRsend[$i],$GUI_CHECKED)
+	ConsoleWrite (StringFormat("(macroRepeatSend) Change of macro repeat, from #%d to #%d\r\n", $mcrRptCur, $i))
+	$mcrRptCur = $i
+	Return
+    Endif
+    If $mcrRepeat = true Then
+	$mcrRepeat = False
+	ConsoleWrite (StringFormat("(macroRepeatSend) End macro repeat\r\n"))
+	Return
+    Else
+	$mcrRepeat = true
+	ConsoleWrite (StringFormat("(macroRepeatSend) New macro repeat, #%d\r\n", $i))
+	$mcrRptCur = $i
+    EndIf
+    Return
 EndFunc
 
 

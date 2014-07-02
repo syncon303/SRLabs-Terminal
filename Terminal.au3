@@ -1,13 +1,11 @@
-
-; This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
-; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
-
-
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
+; This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
 ;#AutoIt3Wrapper_Change2CUI=y
 #include-once
 #cs ----------------------------------------------------------------------------
@@ -64,6 +62,7 @@ Global $hVISAdll = 0
 Global Const $MACRO_NUMBER = 27
 Global $iMcr[$MACRO_NUMBER], $iMcrP[2][$MACRO_NUMBER], $bMcrSend[$MACRO_NUMBER], $iMcrRT[$MACRO_NUMBER], $checkMcrRsend[$MACRO_NUMBER]
 
+Global $mcrRepeat = False, $mcrRptCur = 0
 
 Global $ShowMacros = 0
 
@@ -78,7 +77,7 @@ EndIf
 $DUMMY_FILL = 0
 
 Opt("GUIResizeMode",802)
-HotKeySet("{UP}", "captureUP")
+;~ HotKeySet("{UP}", "captureUP")
 Func captureUP()
     If WinGetHandle("") <> $Terminal Then
 	HotKeySet("{UP}")
@@ -101,7 +100,7 @@ EndFunc
 
 
 
-HotKeySet("{DOWN}", "captureDOWN")
+;~ HotKeySet("{DOWN}", "captureDOWN")
 Func captureDOWN()
     If WinGetHandle("") <> $Terminal Then
 	HotKeySet("{DOWN}")
@@ -123,10 +122,10 @@ Func captureDOWN()
 EndFunc
 
 
-HotKeySet("^{DEL}", "clearRXbuffer") ; CTRL+DEL clears RX input box
+;~ HotKeySet("^{DEL}", "clearRXbuffer") ; CTRL+DEL clears RX input box
 
 
-HotKeySet("{ENTER}", "captureENTER")
+;~ HotKeySet("{ENTER}", "captureENTER")
 Func captureENTER()
     If WinGetHandle("") <> $Terminal Then
 	HotKeySet("{ENTER}")
@@ -156,7 +155,7 @@ Func captureENTER()
 EndFunc
 
 #Region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
-$Terminal = GUICreate("SRLabs Terminal", 654, 666, -1, -1, -1, -1)
+$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath) , 654, 666, -1, -1, -1, -1)
 $Connection = GUICtrlCreateGroup("", 0, 0, 125, 65)
 $rCOM = GUICtrlCreateRadio("COM", 4, 12, 41, 17)
 $rLAN = GUICtrlCreateRadio("LAN", 4, 28, 45, 17)
@@ -267,6 +266,8 @@ For $i = 0 To $MACRO_NUMBER - 1
     $macroParVisible[$i][1] = 0
     GUICtrlSetOnEvent($bMcrSend[$i],"macroEventSend")
     GUICtrlSetOnEvent($iMcr[$i],"macroEventSend")
+
+    GUICtrlSetOnEvent($checkMcrRsend[$i],"macroRepeatSend")
 Next
 
 For $i = 0 To $MACRO_NUMBER - 1
@@ -286,6 +287,9 @@ Next
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState($gMacros,$GUI_HIDE)
 ;~ GUISetState(@SW_SHOW)
+
+GUICtrlSetOnEvent($checkTX_CR,"regStoreGUI")
+GUICtrlSetOnEvent($checkCRLF,"regStoreGUI")
 
 GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEvents")
 GUISetOnEvent($GUI_EVENT_MINIMIZE, "SpecialEvents")
@@ -326,10 +330,60 @@ regLoadLAN()
 If $VISA32_AVAILABLE Then regLoadVISA()
 regLoadRXheadTail()
 regReadMacros()
+regLoadGUI()
 macrosVisible($ShowMacros)
 
 Local $temp
 While 1
+    If $mcrRepeat = true and BitAND(GUICtrlRead ($checkMcrRsend[$mcrRptCur]), $GUI_CHECKED) = $GUI_CHECKED then
+	macroSend($mcrRptCur)
+	Local $tInit = TimerInit(), $tLimit = GUICtrlRead ($iMcrRT[$mcrRptCur])
+	While TimerDiff($tInit) < $tLimit
+	    MainLoop() ; process input during wait
+	Wend
+    else
+	MainLoop()
+    EndIf
+WEnd
+
+#include "term_comms.au3"
+#include "term_reg.au3"
+#include "term_macros.au3"
+
+Func Mainloop()
+    Local $i
+    ; determine which control has focus
+    If WinGetHandle("") == $Terminal Then
+	Local $a, $i, $match = 0
+	HotKeySet("^{DEL}", "clearRXbuffer")
+	$a = ControlGetHandle ($Terminal, "", ControlGetFocus($Terminal))
+	$a = _WinAPI_GetDlgCtrlID($a)
+	If $a = $inputTX Then
+	    HotKeySet("{ENTER}", "captureENTER")
+	    HotKeySet("{UP}", "captureUP")
+	    HotKeySet("{DOWN}", "captureDOWN")
+	Else
+	    For $i = 0 To $MACRO_NUMBER - 1
+		If $a = $iMcr[$i] Then
+		    HotKeySet("{ENTER}", "captureENTER")
+		    HotKeySet("{DOWN}")
+		    HotKeySet("{UP}")
+		    $match = 1
+		    ExitLoop
+		EndIf
+	    Next
+	    if $match = 0 Then
+		HotKeySet("{ENTER}")
+		HotKeySet("{DOWN}")
+		HotKeySet("{UP}")
+	    EndIf
+	EndIf
+    Else
+	HotKeySet("^{DEL}")
+	HotKeySet("{ENTER}")
+	HotKeySet("{DOWN}")
+	HotKeySet("{UP}")
+    EndIf
     If $ConOpen = $connectCOM Or $ConOpen = $connectLAN Then
 	readRXbuffer()
     EndIf
@@ -342,11 +396,7 @@ While 1
 	    EndIf
 	Next
     EndIf
-WEnd
-
-#include "term_comms.au3"
-#include "term_reg.au3"
-#include "term_macros.au3"
+EndFunc
 
 
 Func SpecialEvents()

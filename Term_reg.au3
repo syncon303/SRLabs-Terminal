@@ -46,8 +46,35 @@ EndFunc
 ;
 ;
 
-Func loadRegistry ()
+Func regLoadGUI ()
+    ; load newline character settings from registry
+    local $reg = RegRead($REG_ROOT, "NewLine")
+    If $reg = "" or $reg = "CRLF" Then
+	GUICtrlSetState($checkTX_CR,$GUI_CHECKED)
+	GUICtrlSetState($checkCRLF,$GUI_CHECKED)
+	if $reg = "" Then regStoreGUI()
+    elseif $reg = "CR" Then
+	GUICtrlSetState($checkTX_CR,$GUI_CHECKED)
+	GUICtrlSetState($checkCRLF,$GUI_UNCHECKED)
+    elseif $reg = "LF" then
+	GUICtrlSetState($checkTX_CR,$GUI_UNCHECKED)
+	GUICtrlSetState($checkCRLF,$GUI_CHECKED)
+    else
+	GUICtrlSetState($checkTX_CR,$GUI_UNCHECKED)
+	GUICtrlSetState($checkCRLF,$GUI_UNCHECKED)
+    EndIf
+EndFunc
 
+Func regStoreGUI()
+    ; store newline characters to registry
+    local $reg = ""
+    if BitAND(GUICtrlRead ($checkTX_CR), $GUI_CHECKED) = $GUI_CHECKED Then
+	$reg = "CR"
+    EndIf
+    if BitAND(GUICtrlRead ($checkCRLF), $GUI_CHECKED) = $GUI_CHECKED Then
+	$reg &= "LF"
+    EndIf
+    RegWrite ( $REG_ROOT, "NewLine", "REG_SZ", $reg)
 EndFunc
 
 Func regLoadLastCOMport() ; TODO

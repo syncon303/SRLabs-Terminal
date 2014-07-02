@@ -182,13 +182,18 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
     ; send out
     For $i = 0 To $cmdNo - 1
 	if $meta[$i] = "delay" Then
-	    Sleep($cmd[$i])
-	ElseIf $meta[$i] = "macro" And $_reentrNo < $MAX_REENTRY Then
-	    ; get values for macro and parse the macro
-	    Local $m = $macroString[$cmd[$i] - 1]
-	    Local $mp1 = $macroStrPar[$cmd[$i] - 1][0]
-	    Local $mp2 = $macroStrPar[$cmd[$i] - 1][1]
-	    parseString($m, $mp1, $mp2, $_reentrNo + 1)
+	    Local $tInit = TimerInit()
+	    While TimerDiff($tInit) < $cmd[$i]
+		MainLoop() ; process input during wait
+	    Wend
+	ElseIf $meta[$i] = "macro" Then
+	    If $_reentrNo < $MAX_REENTRY Then
+		; get values for macro and parse the macro
+		Local $m = $macroString[$cmd[$i] - 1]
+		Local $mp1 = $macroStrPar[$cmd[$i] - 1][0]
+		Local $mp2 = $macroStrPar[$cmd[$i] - 1][1]
+		parseString($m, $mp1, $mp2, $_reentrNo + 1)
+	    EndIf
 	Else
 	    local $ret = sendData ($cmd[$i])
 	EndIf
@@ -281,11 +286,12 @@ Func readRXbuffer()
 	$rxbuf = TCPRecv($hCOM, 2000)
 ;~ 	$rxbuf = tcpRXwait($hCOM)
     EndIf
-    writeRXdata($rxbuf)
+    If $rxbuf <> "" Then writeRXdata($rxbuf)
 EndFunc
 
-Func writeRXdata($_str)
+Func writeRXdata($_str, $DEBUG = 0)
     If $logEnabled Then FileWrite($hLog, $_str)
+    If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'", $_str))
     $editRXcount += StringLen($_str)
     If $editRXcount > $cMaxEditLen Then
 	$editRXcount = StringLen($_str)
