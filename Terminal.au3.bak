@@ -24,7 +24,7 @@ Global $__use_convert_au3 = 1
 #include <ComboConstants.au3>
 #include <EditConstants.au3>
 #include <GUIConstantsEx.au3>
-#include <GuiRichEdit.au3>
+;#include <GuiRichEdit.au3>
 #include <WindowsConstants.au3>
 #include <GuiComboBox.au3>
 #include "COMMs.au3"
@@ -155,7 +155,6 @@ Func captureENTER()
 
 EndFunc
 
-
 #Region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
 $Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath) , 654, 666, -1, -1, -1, -1)
 $Connection = GUICtrlCreateGroup("", 0, 0, 125, 65)
@@ -214,11 +213,10 @@ GUICtrlCreateGroup("", -99, -99, 1, 1)
 $editTX = GUICtrlCreateEdit("", 0, 552, 653, 113, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
 GUICtrlSetFont(-1, 9, 400, 0, "Courier New")
 GUICtrlSetColor(-1, 0x000000)
-;~ $editRX = GUICtrlCreateEdit("", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
-$editRX = _GUICtrlRichEdit_Create($Terminal, "", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_READONLY,$WS_VSCROLL,$ES_MULTILINE ))
-_GUICtrlRichEdit_SetBkColor($editRX, 0x000000) ; background black
-_GUICtrlRichEdit_SetCharColor($editRX , 0x808080)
-_GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
+$editRX = _GUICtrlEdit_Create($Terminal, "", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
+;~ _GUICtrlRichEdit_SetBkColor($editRX, 0x000000) ; background black
+;~ _GUICtrlRichEdit_SetCharColor($editRX , 0x808080)
+;~ _GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
 GUICtrlSetFont(-1, 9, 400, 0, "Courier New")
 $checkTX_CR = GUICtrlCreateCheckbox("+CR", 536, 530, 41, 17)
 GUICtrlSetState(-1, $GUI_CHECKED)
@@ -420,7 +418,7 @@ Func Terminate ()
     If $logFileSelected Then FileClose($hLog)
     closeSocket()
     TCPShutdown ( )
-    _GUICtrlRichEdit_Destroy($editRX)
+;~     _GUICtrlRichEdit_Destroy($editRX)
     Exit
 EndFunc
 
@@ -457,9 +455,8 @@ EndFunc
 
 
 Func clearRXbuffer()
-;~     GUICtrlSetData($editRX, "")
-;~     _GUICtrlEdit_SetText($editRX, "{\rtf" )
-    _GUICtrlRichEdit_SetText($editRX, "" )
+    GUICtrlSetData($editRX, "")
+;    _GUICtrlEdit_SetText($editRX, "")
 EndFunc
 
 

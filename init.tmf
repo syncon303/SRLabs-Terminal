@@ -1,0 +1,49 @@
+# Terminal macro file v2
+M1
+regrd 0x00#013#010%DLY0100regrd 0x02#013#010%DLY0100regrd 0x09#013#010
+M2
+AS3911 transparent:
+M3
+spibr 4M#013#010%DLY0100gpio b3 o 1#013#010%DLY0100regwr 0x02,0xc8#013#010%DLY0100regrd 0x02#013#010
+M4
+cmdexec -q 0x01#013#010%DLY0100cmdexec -q 0x02#013#010%DLY0100cmdexec -q 0x1c#013#010%DLY0100gpio b3 o 0#013#010
+M5
+XILINX TX:
+M6
+spibr 4M#013#010%DLY0100gpio b3 o 0#013#010%DLY0100regwr 0x02,0xc8#013#010%DLY0100regrd 0x02#013#010
+M7
+regwr 0x09,0xa4#013#010%DLY0100regwr 0x24,0x80#013#010%DLY0100regwr 0x26,0xf0#013#010
+M8
+AntiColl
+M9
+cmdexec  0x06#013#010
+M10
+sendreq 0x93 0x20#013#010
+M11
+sendreq -c b 0x93 0x70 0x88 0x01 0x23 0x45 0xef#013#010
+M12
+sendreq 0x95 0x20#013#010
+M13
+sendreq -c b 0x95 0x70 0x88 0x67 0x89 0xab 0xcd #013#010
+M14
+sendreq 0x97 0x20#013#010
+M15
+sendreq -c b 0x97 0x70 0xcd 0xef 0xaa 0x55 0xdd#013#010
+M16
+RATS
+M17
+sendreq -c b 0xE0 0x00#013#010
+M18
+sendreq -c b 0xD0 0x11 0x00#013#010
+M19
+
+M20
+
+M21
+
+M22
+
+M23
+
+M24
+

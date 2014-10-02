@@ -1,26 +1,225 @@
 
 ; This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 ; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
+#include <GuiRichEdit.au3>
+#include <GuiEdit.au3>
 
 Func sendInputData()
     Local $tx = GUICtrlRead ($InputTX)
     Local $ret
     checkHistory($tx)
-    $ret = sendData($tx)
+;    $ret = sendData($tx)
+    $ret = parseString($tx)
     GUICtrlSetData ($InputTX, "")
+    $histLastString = $tx
+    $noHist = true
     Return $ret
 EndFunc
 
-Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
-    Local $ending = ""
-    Local $tx = $_str
-    If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
-	$ending &= @CR
-	If GUICtrlRead ($checkCRLF) = $GUI_CHECKED Then
-	    $ending &= @LF
+
+
+; Parse following meta strings:
+; - %DLY1234 -> Delay in milliseconds
+; - #xxx -> ASCII character in decimal format
+; - $xx  -> ASCII character in hexadecimal format
+; - %M12  -> insert macro
+
+
+Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
+    Const $MAX_CMDS = 100
+    Const $MAX_REENTRY = 10
+    Local $cmd[$MAX_CMDS], $meta[$MAX_CMDS], $cmdNo = 0, $i
+    For $i = 0 to $MAX_CMDS - 1
+	$cmd[$i] = ""
+	$meta[$i] = ""
+    Next
+    ; parse input string
+    Local $quote = "", $token = "", $char = "", $str = $_str, $reentry = 0
+    While true
+	If Not $reentry Then
+	    If StringLen($str) = 0 Then ExitLoop
+	    $char = StringLeft($str, 1) ; store first remaining character of the string
+	    $str = StringTrimLeft ($str, 1)
+	Else
+	    $reentry = 0
 	EndIf
+	; check for quotation marks
+	if $quote <> "" Then
+	    if $char = $quote Then
+		$quote = ""
+	    Else
+		$cmd[$cmdNo] &= $char
+	    EndIf
+	; check for tokens
+	Elseif $token <> "" then
+	    If $char = $token Then ; repeated token, ignore and put single characater to output string
+		$token = ""
+		$cmd[$cmdNo] &= $char
+		ContinueLoop
+	    Elseif $char = "$" or $char = "#" or $char = "%" then
+		; format error handling, interpret previous token as character and set new token
+		$cmd[$cmdNo] &= $token
+		$token = $char
+		ContinueLoop
+	    ElseIf $token = "$" then
+		; check for double hexadecimal characters
+		Local $a = $char & StringLeft ($str, 1)
+		if StringLen($a) = 2 and StringIsXDigit($a) Then
+		    $cmd[$cmdNo] &= Chr(Dec($a))
+		    $str = StringTrimLeft($str, 1)
+		    $token = ""
+		Else
+		    $cmd[$cmdNo] &= $token
+		    $token = ""
+		    $reentry = 1
+		EndIf
+	    ElseIf $token = "#" then
+		; check for three decimal characters
+		Local $a = $char & StringLeft ($str, 2)
+		if StringLen($a) = 3 and StringIsDigit($a) Then
+		    $cmd[$cmdNo] &= Chr($a)
+		    $str = StringTrimLeft($str, 2)
+		    $token = ""
+		Else
+		    $cmd[$cmdNo] &= $token
+		    $token = ""
+		    $reentry = 1
+		EndIf
+	    ElseIf $token = "%" then
+		If $char = "M" Then
+		    Local $a = StringLeft($str, 2)
+		    if StringLen($a) = 2 and StringIsDigit($a) Then
+			If $cmd[$cmdNo] <> "" Then $cmdNo += 1
+			$meta[$cmdNo] = "macro"
+			$cmd[$cmdNo] = Int($a)
+			$cmdNo += 1
+			$token = ""
+			$str = StringTrimLeft($str, 2)
+		    Else
+			$cmd[$cmdNo] &= $token
+			$token = ""
+			$reentry = 1
+		    EndIf
+		Elseif $char = "D" Then
+		    Local $a = StringLeft($str, 2)
+		    Local $b = StringMid($str, 3, 4)
+		    if $a = "LY" and StringLen($b) = 4 and StringIsDigit($b) Then
+			If $cmd[$cmdNo] <> "" Then $cmdNo += 1
+			$meta[$cmdNo] = "delay"
+			$cmd[$cmdNo] = Int($b)
+			$cmdNo += 1
+			$token = ""
+			$str = StringTrimLeft($str, 6)
+		    Else
+			$cmd[$cmdNo] &= $token
+			$token = ""
+			$reentry = 1
+		    EndIf
+		Elseif $char = "P" Then
+		    Local $a = StringLeft($str, 1)
+		    $token = ""
+		    if $a = "1" Then
+			$str = $_p1 & StringTrimLeft($str, 1) ; add parameter string to main string
+		    Elseif $a = "2" Then
+			$str = $_p2 & StringTrimLeft($str, 1) ; add parameter string to main string
+		    Else
+			$cmd[$cmdNo] &= $token
+			$reentry = 1
+		    EndIf
+		Elseif $char = "C" or $char = "L" then
+		    Local $a = $char & StringLeft($str, 1)
+		    Local $b = $char & StringLeft($str, 3)
+		    $token = ""
+		    if $b = "CRLF" Then
+			$str = StringTrimLeft($str, 3)
+			$cmd[$cmdNo] &= Chr(13) & Chr(10)
+		    elseif $a = "CR" Then
+			$str = StringTrimLeft($str, 1)
+			$cmd[$cmdNo] &= Chr(13)
+		    elseif $a = "LF" Then
+			$str = StringTrimLeft($str, 1)
+			$cmd[$cmdNo] &= Chr(10)
+		    Else
+			$cmd[$cmdNo] &= $token
+			$reentry = 1
+		    EndIf
+		EndIf
+	    EndIf
+	Elseif $char = "$" or $char = "#" or $char = "%" then
+	    $token = $char
+	    ContinueLoop
+	Elseif $char = "'" or $char = '"' then
+	    $quote = $char
+	    ContinueLoop
+	Else
+	    $cmd[$cmdNo] &= $char ; add character to command string
+	EndIf
+    WEnd
+    if  $cmd[$cmdNo] <> "" Then $cmdNo += 1
+    If $DEBUG Then
+	Local $dbgoffset = "", $z
+	For $z = 1 to $_reentrNo
+	    $dbgoffset &= "  "
+	Next
+	ConsoleWrite(StringFormat ("%sSending command: '%s', ", $dbgoffset, $_str))
+	ConsoleWrite(StringFormat ("param1: '%s', param2: '%s'\r\n", $_p1, $_p2))
+	ConsoleWrite(StringFormat ("%s>Parse table: \r\n", $dbgoffset))
+	For $i = 0 To $cmdNo - 1
+	    local $c = $cmd[$i]
+	    if $i = $cmdNo - 1 and $_reentrNo = 0 Then
+		If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
+		    $c &= @CR
+		    If GUICtrlRead ($checkCRLF) = $GUI_CHECKED Then
+			$c &= @LF
+		    EndIf
+		EndIf
+	    EndIf
+	    if $meta[$i] <> "" Then
+		ConsoleWrite(StringFormat ("%s  %d -> meta: '%s' = '%s'\r\n", $dbgoffset, $i, $meta[$i], $cmd[$i]))
+	    Else
+		ConsoleWrite(StringFormat ("%s  %d -> command: '%s'\r\n", $dbgoffset, $i, $c))
+	    EndIf
+	Next
     EndIf
-    $tx &= $ending
+    ; send out
+    For $i = 0 To $cmdNo - 1
+	if $meta[$i] = "delay" Then
+	    Local $tInit = TimerInit()
+	    While TimerDiff($tInit) < $cmd[$i]
+		MainLoop() ; process input during wait
+	    Wend
+	ElseIf $meta[$i] = "macro" Then
+	    If $_reentrNo < $MAX_REENTRY Then
+		; get values for macro and parse the macro
+		Local $m = $macroString[$cmd[$i] - 1]
+		Local $mp1 = $macroStrPar[$cmd[$i] - 1][0]
+		Local $mp2 = $macroStrPar[$cmd[$i] - 1][1]
+		parseString($m, $mp1, $mp2, $_reentrNo + 1)
+	    EndIf
+	Else
+	    local $ret = sendData ($cmd[$i])
+	EndIf
+    Next
+    If $_reentrNo = 0 then
+	Local $c = ""
+	If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
+	    $c &= @CR
+	    If GUICtrlRead ($checkCRLF) = $GUI_CHECKED Then $c &= @LF
+	EndIf
+	local $ret = sendData ($c)
+    EndIf
+EndFunc
+
+Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
+;~     Local $ending = ""
+    Local $tx = $_str
+;~     If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
+;~ 	$ending &= @CR
+;~ 	If GUICtrlRead ($checkCRLF) = $GUI_CHECKED Then
+;~ 	    $ending &= @LF
+;~ 	EndIf
+;~     EndIf
+;~     $tx &= $ending
     ; send the string out
     If StringLen($tx) = 0 Then Return 0 ; skip if empty string
     If $DEBUG Then ConsoleWrite("--> " & $tx)
@@ -89,17 +288,65 @@ Func readRXbuffer()
 	$rxbuf = TCPRecv($hCOM, 2000)
 ;~ 	$rxbuf = tcpRXwait($hCOM)
     EndIf
-    writeRXdata($rxbuf)
+    If $rxbuf <> "" Then writeRXdata($rxbuf)
 EndFunc
 
-Func writeRXdata($_str)
+Func writeRXdata($_str, $DEBUG = 1)
     If $logEnabled Then FileWrite($hLog, $_str)
     $editRXcount += StringLen($_str)
     If $editRXcount > $cMaxEditLen Then
 	$editRXcount = StringLen($_str)
-	GUICtrlSetData ($editRX, "")
+;~ 	GUICtrlSetData ($editRX, "")
+	_GUICtrlRichEdit_SetText ($editRX, "")
     EndIf
-    _GUICtrlEdit_AppendText($editRX, $_str)
+    ; parse terminal escape sequences
+    Local $i, $ch, $s, $s2, $esOn = 0, $es = "", $esCnt = 0
+    $s = StringSplit($_str, "")
+    $s2 = ""
+    For $i = 1 To $s[0]
+	$ch = $s[$i]
+	if $ch = Chr(Dec("1B")) Then
+	    $esOn = 1
+	    $es = ""
+	    $esCnt = 0
+	    If $s2 <> "" Then
+		If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'\r\n", $s2))
+;~ 	    	_GUICtrlEdit_AppendText($editRX, $s2)
+		_GUICtrlRichEdit_AppendText($editRX, $s2)
+	    Endif
+	    $s2 = ""
+	    ContinueLoop
+	ElseIf $esOn Then
+	    $esCnt += 1
+	    $es &= $ch
+	    If $esCnt == 1 and $ch == "[" Then
+		; long ES
+	    Elseif $esCnt == 1 Then
+		; finish ES and exit
+		If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $es))
+		_GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
+		$esOn = 0;
+	    Else ; next characters
+		; detect end of ES
+		If StringIsDigit($ch) Or $ch == ";" Or $ch == '"' Then
+		    ; ES continues
+		    ContinueLoop
+		Else
+		    If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $es))
+		    _GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
+		    $esOn = 0;
+		EndIf
+	    EndIf
+	    ContinueLoop;
+	Else
+	    if $ch <> @LF Then $s2 &= $ch
+	endif
+    Next
+    if $s2 <> "" Then
+;~      _GUICtrlEdit_AppendText($editRX, $s2)
+	_GUICtrlRichEdit_AppendText($editRX, $s2)
+	If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'", $s2))
+    EndIf
 EndFunc
 
 
