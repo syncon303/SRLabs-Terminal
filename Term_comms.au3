@@ -291,64 +291,197 @@ Func readRXbuffer()
     If $rxbuf <> "" Then writeRXdata($rxbuf)
 EndFunc
 
-Func writeRXdata($_str, $DEBUG = 1)
+Func EditRXappendText($_s, $DEBUG = 0)
+    Local $curCtrl = ControlGetFocus("")
+;~    _GUICtrlEdit_AppendText($editRX, $s2)
+    _GUICtrlRichEdit_AppendText($editRX, $_s)
+    _GUICtrlRichEdit_SetSel($editRX, $EscSel, -1)
+    _GUICtrlRichEdit_SetCharBkColor($editRX, $REtxtBgColor)
+    _GUICtrlRichEdit_SetCharColor($editRX, $REtxtColor)
+    _GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
+    _GUICtrlRichEdit_SetCharAttributes($editRX, $REtxtAttr)
+    _GUICtrlRichEdit_SetSel($editRX, -1, -1)
+    If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'", $_s))
+    ControlFocus("", "", $curCtrl)
+EndFunc
+
+Func writeRXdata($_str, $blockES = 0, $DEBUG = 1)
+    Local $curCtrl = ControlGetFocus("")
     If $logEnabled Then FileWrite($hLog, $_str)
     $editRXcount += StringLen($_str)
     If $editRXcount > $cMaxEditLen Then
 	$editRXcount = StringLen($_str)
 ;~ 	GUICtrlSetData ($editRX, "")
 	_GUICtrlRichEdit_SetText ($editRX, "")
+	$EscSel = 0
     EndIf
     ; parse terminal escape sequences
-    Local $i, $ch, $s, $s2, $esOn = 0, $es = "", $esCnt = 0
+    Local $i, $ch, $s, $s2
     $s = StringSplit($_str, "")
     $s2 = ""
     For $i = 1 To $s[0]
 	$ch = $s[$i]
 	if $ch = Chr(Dec("1B")) Then
-	    $esOn = 1
-	    $es = ""
-	    $esCnt = 0
+	    $escOn = 1
+	    $escStr = ""
 	    If $s2 <> "" Then
-		If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'\r\n", $s2))
-;~ 	    	_GUICtrlEdit_AppendText($editRX, $s2)
-		_GUICtrlRichEdit_AppendText($editRX, $s2)
+		EditRXappendText($s2,$DEBUG)
 	    Endif
 	    $s2 = ""
 	    ContinueLoop
-	ElseIf $esOn Then
-	    $esCnt += 1
-	    $es &= $ch
-	    If $esCnt == 1 and $ch == "[" Then
+	ElseIf $escOn Then
+	    $escStr &= $ch
+	    If StringLen ($escStr) == 1 and $ch == "[" Then
 		; long ES
-	    Elseif $esCnt == 1 Then
+	    Elseif StringLen ($escStr) == 1 Then
 		; finish ES and exit
-		If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $es))
-		_GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
-		$esOn = 0;
+		If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $escStr))
+		If not $blockES Then ParseES($escStr, $DEBUG)
+		$escOn = 0;
 	    Else ; next characters
 		; detect end of ES
 		If StringIsDigit($ch) Or $ch == ";" Or $ch == '"' Then
 		    ; ES continues
 		    ContinueLoop
 		Else
-		    If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $es))
-		    _GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
-		    $esOn = 0;
+		    If $DEBUG Then ConsoleWrite(StringFormat("ES = '%s'\r\n", $escStr))
+		    If not $blockES Then ParseES($escStr, $DEBUG)
+		    $escOn = 0;
 		EndIf
 	    EndIf
 	    ContinueLoop;
 	Else
-	    if $ch <> @LF Then $s2 &= $ch
+	    ;if $ch <> @LF Then
+	    $s2 &= $ch
 	endif
     Next
     if $s2 <> "" Then
-;~      _GUICtrlEdit_AppendText($editRX, $s2)
-	_GUICtrlRichEdit_AppendText($editRX, $s2)
-	If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'", $s2))
+	EditRXappendText($s2,$DEBUG)
     EndIf
+    ControlFocus("", "", $curCtrl)
 EndFunc
 
+
+;~ Global $REtxtBgColor = $DefREtxtBgColor
+;~ Global $REbgColor = $DefREbgColor
+;~ Global $REtxtColor = $DefREtxtColor
+
+Func ParseES ($_str, $DEBUG = 0)
+    If StringCompare($_str, "[2J") == 0 Then
+	_GUICtrlRichEdit_SetText ($editRX, "")
+	$EscSel = 0
+	Return
+    ElseIf StringLeft($_str,1) = "[" and StringRight($_str,1) = "m" Then
+	Local $prevBGColor = $REtxtBgColor
+	Local $prevTxtColor = $REtxtColor
+	Local $prevAttr = $REtxtAttr
+	If $DEBUG then ConsoleWrite(StringFormat("Set Display Attributes escape sequence detected.\r\n"))
+	$_str = StringTrimLeft (StringTrimRight($_str,1),1)
+	local $arg = StringSplit($_str, ";")
+	Local $params, $i
+	$params = 0
+	For $i = 1 to $arg[0]
+	    if $arg[$i] >= 30 And $arg[$i] < 40 Then
+		; foreground color
+		$REtxtColor = EscCodeToColor($arg[$i] - 30)
+
+	    ElseIf $arg[$i] >= 40 And $arg[$i] < 50 Then
+		$REtxtBgColor = EscCodeToColor($arg[$i] - 40)
+	    ElseIf $arg[$i] >= 0 And $arg[$i] <= 8 Then
+		$params += BitShift (1, -$arg[$i])
+	    EndIf
+	Next
+	If $DEBUG then ConsoleWrite(StringFormat("Params = %d\r\n",Binary($params)))
+	If BitAND( $params, BitShift(1,0)) Then
+	    ; reset all
+	    $REtxtBgColor = $DefREtxtBgColor
+	    $REbgColor = $DefREbgColor
+	    $REtxtColor = $DefREtxtColor
+	    $REtxtAttr = "-bo-di-em-hi-im-it-li-ou-pr-re-sh-sm-st-sb-sp-un-al"
+	    If $DEBUG then ConsoleWrite(StringFormat("Set Default.\r\n"))
+
+	ElseIf BitAND( $params, BitShift(1,-1)) Then
+	    $REtxtColor = BrightColor($REtxtColor, $DEBUG)
+	ElseIf BitAND( $params, BitShift(1,-2)) Then
+	    ;$REtxtColor = DimColor($REtxtColor, $DEBUG)
+	ElseIf BitAND( $params, BitShift(1,-4)) Then
+	    Local $a = StringInStr ($REtxtAttr, "un")
+	    $REtxtAttr = StringReplace($REtxtAttr, $a -1, "+")
+	ElseIf BitAND( $params, BitShift(1,-5)) Then
+	    ; blink not supported
+	ElseIf BitAND( $params, BitShift(1,-7)) Then
+	    Local $a = $REtxtColor
+	    $REtxtColor = $REtxtBgColor
+	    $REtxtBgColor = $a
+	ElseIf BitAND( $params, BitShift(1,-8)) Then
+	    Local $a = StringInStr ($REtxtAttr, "hi")
+	    $REtxtAttr = StringReplace($REtxtAttr, $a -1, "+")
+
+	EndIf
+	If $DEBUG Then ConsoleWrite(StringFormat("New FG = %s, BG = %s\r\n", Hex($REtxtColor), Hex($REtxtBgColor)))
+	If $prevBGColor <> $REtxtBgColor Or $prevTxtColor <> $REtxtColor Or $prevAttr <> $REtxtAttr Then
+	    Local $sel = _GUICtrlRichEdit_GetSel($editRX)
+	    $EscSel = $sel[1]
+	EndIf
+	Return
+    EndIf
+
+EndFunc
+
+Func DimColor ($_c, $DEBUG =0)
+    Local $r, $g, $b
+    $r = Floor($_c/65536)
+    $g = Floor (($_c - $r * 65536) / 256)
+    $b = Mod ($_c, 256)
+    If $DEBUG then ConsoleWrite(StringFormat("Dim detected - #%s (%d,%d,%d) -> ",Hex($_c, 6), $r,$g,$b))
+    $r = $r / 2
+    $g = $g / 2
+    $b = $b / 2
+    $_c = $r * 65536 + $g * 256 + $b
+    If $DEBUG then ConsoleWrite(StringFormat(" #%s (%d,%d,%d)\n",Hex($_c), $r,$g,$b))
+    return $_c
+EndFunc
+
+Func BrightColor ($_c, $DEBUG = 0)
+    Local $r, $g, $b
+    $r = Floor($_c/65536)
+    $g = Floor (($_c - $r * 65536) / 256)
+    $b = Mod ($_c, 256)
+    If $DEBUG then ConsoleWrite(StringFormat("Bright detected - #%s (%d,%d,%d) -> ",Hex($_c, 6), $r,$g,$b))
+    $r = $r * 2
+    $g = $g * 2
+    $b = $b * 2
+    If $r >=256 Then $r = 255
+    If $g >=256 Then $g = 255
+    If $b >=256 Then $b = 255
+    $_c = $r * 65536 + $g * 256 + $b
+    If $DEBUG then ConsoleWrite(StringFormat(" #%s (%d,%d,%d)\n",Hex($_c), $r,$g,$b))
+    return $_c
+EndFunc
+
+
+Func EscCodeToColor($_c)
+    Switch($_c)
+	Case 0
+	    Return 0x000000
+	Case 1
+	    Return 0x800000
+	Case 2
+	    Return 0x008000
+	Case 3
+	    Return 0x808000
+	Case 4
+	    Return 0x000080
+	Case 5
+	    Return 0x800080
+	Case 6
+	    Return 0x008080
+	Case 7
+	    Return 0x808080
+	Case Else
+	    Return 0x000000
+    EndSwitch
+EndFunc
 
 Func toggleCOMconnection()
     If $ConOpen = $connectCOM Then

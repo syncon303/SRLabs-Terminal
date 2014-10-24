@@ -77,6 +77,20 @@ EndIf
 
 $DUMMY_FILL = 0
 
+Global $DefREtxtBgColor = 0x000000
+Global $DefREbgColor = 0x000000
+Global $DefREtxtColor = 0x808080
+Global $REtxtBgColor = $DefREtxtBgColor
+Global $REbgColor = $DefREbgColor
+Global $REtxtColor = $DefREtxtColor
+Global $REtxtAttr = "-bo-di-em-hi-im-it-li-ou-pr-re-sh-sm-st-sb-sp-un-al"
+
+
+Global $escOn = 0 ; escape sequence in progress
+Global $escStr = "" ; escape sequence string
+Global $EscSel = 0
+
+
 Opt("GUIResizeMode",802)
 ;~ HotKeySet("{UP}", "captureUP")
 Func captureUP()
@@ -215,9 +229,10 @@ $editTX = GUICtrlCreateEdit("", 0, 552, 653, 113, BitOR($ES_AUTOVSCROLL,$ES_AUTO
 GUICtrlSetFont(-1, 9, 400, 0, "Courier New")
 GUICtrlSetColor(-1, 0x000000)
 ;~ $editRX = GUICtrlCreateEdit("", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
-$editRX = _GUICtrlRichEdit_Create($Terminal, "", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_READONLY,$WS_VSCROLL,$ES_MULTILINE ))
-_GUICtrlRichEdit_SetBkColor($editRX, 0x000000) ; background black
-_GUICtrlRichEdit_SetCharColor($editRX , 0x808080)
+$editRX = _GUICtrlRichEdit_Create($Terminal, "", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL ,$ES_READONLY,$WS_VSCROLL,$ES_MULTILINE )) ;
+_GUICtrlRichEdit_SetBkColor($editRX, $DefREbgColor) ; background black
+_GUICtrlRichEdit_SetCharBkColor($editRX, $DefREtxtBgColor) ; background black
+_GUICtrlRichEdit_SetCharColor($editRX , $DefREtxtColor)
 _GUICtrlRichEdit_SetFont($editRX, 9, "Courier New")
 GUICtrlSetFont(-1, 9, 400, 0, "Courier New")
 $checkTX_CR = GUICtrlCreateCheckbox("+CR", 536, 530, 41, 17)
@@ -457,9 +472,12 @@ EndFunc
 
 
 Func clearRXbuffer()
+    Local $curCtrl = ControlGetFocus("")
 ;~     GUICtrlSetData($editRX, "")
 ;~     _GUICtrlEdit_SetText($editRX, "{\rtf" )
-    _GUICtrlRichEdit_SetText($editRX, "" )
+    _GUICtrlRichEdit_SetText($editRX, "")
+    $EscSel = 0
+    ControlFocus("", "", $curCtrl)
 EndFunc
 
 
