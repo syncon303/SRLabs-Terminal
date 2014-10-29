@@ -106,12 +106,14 @@ Func parseRXhead()
     Local $str = GUICtrlRead($inHead)
     generateHeadTail($str, 1)
     regStoreRXheadTail($str, 0)
+    $RXheadStr = $str
 EndFunc
 
 Func parseRXtail()
     Local $str = GUICtrlRead($InTail)
     generateHeadTail($str, 0)
     regStoreRXheadTail($str, 1)
+    $RXtailStr = $str
 EndFunc
 
 

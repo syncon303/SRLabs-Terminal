@@ -408,8 +408,10 @@ Func Mainloop()
     If $ConOpen = $connectCOM Or $ConOpen = $connectLAN Then
 	readRXbuffer()
     EndIf
-    If GUICtrlRead($inHead) <> $RXheadStr Then parseRXhead()
-    If GUICtrlRead($InTail) <> $RXtailStr Then parseRXtail()
+    If BitAND(GUICtrlRead ($checkEnableRXfilter), $GUI_CHECKED) = $GUI_CHECKED Then
+	If GUICtrlRead($inHead) <> $RXheadStr Then parseRXhead()
+	If GUICtrlRead($InTail) <> $RXtailStr Then parseRXtail()
+    Endif
     If $ShowMacros Then
 	For $i = 0 To $MACRO_NUMBER - 1
 	    If $macroString[$i] <> GUICtrlRead($iMcr[$i]) Then

@@ -3,6 +3,8 @@
 ; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
 #include <GuiRichEdit.au3>
 #include <GuiEdit.au3>
+#include <Array.au3>
+
 
 Func sendInputData()
     Local $tx = GUICtrlRead ($InputTX)
@@ -143,6 +145,38 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
 			$cmd[$cmdNo] &= $token
 			$reentry = 1
 		    EndIf
+		elseif $char = "F" Then
+		    ; check if this should be file entry
+		    Local $a = $char & StringLeft ($str, 3)
+		    if $a = "FILE" Then
+			If $DEBUG Then ConsoleWrite(Stringformat("Here.\r\n"))
+			Local $trimLen = 3
+			local $b = StringTrimLeft ($str, 3)
+			$trimLen = $trimLen + StringLen($b)
+			$b = StringstripWS($b, 1)
+			$trimLen = $trimLen - StringLen($b)
+			if StringLeft($b, 1) = "=" then
+			    $b = StringTrimLeft($b,1)
+			    $trimLen = $trimLen + 1
+			EndIf
+			local $quote  = ""
+			if StringInStr($b, "'") then
+			    $quote = "'"
+			elseif StringInStr($b, "'") then
+			    $quote = '"'
+			EndIf
+			if $quote <> "" Then
+			    $trimLen = $trimLen + StringInStr($b, $quote)
+			    Local $c = StringSplit ($b, $quote)
+			    $b = $c[2]
+			    $trimLen = $trimLen + StringLen($b) + 1
+			EndIf
+			If $DEBUG Then ConsoleWrite(Stringformat("Using filename: %s\r\n", $b))
+			ParseTXfile($b, $cmd, $cmdNo)
+			$str = StringTrimLeft ($str, $trimLen)
+			If $DEBUG Then ConsoleWrite(Stringformat("Remaining string: '%s'\r\n", $str))
+			ExitLoop
+		    Endif
 		EndIf
 	    EndIf
 	Elseif $char = "$" or $char = "#" or $char = "%" then
@@ -200,7 +234,7 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
 	    local $ret = sendData ($cmd[$i])
 	EndIf
     Next
-    If $_reentrNo = 0 then
+    If $_reentrNo = 0 And $cmdNo >= 1 then
 	Local $c = ""
 	If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
 	    $c &= @CR
@@ -209,6 +243,40 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
 	local $ret = sendData ($c)
     EndIf
 EndFunc
+
+
+Func ParseTXfile ($_fName, ByRef $cmd, ByRef $cmdNo)
+    Local $i, $a, $fh, $line
+
+    If StringInStr($_fName, ":") Then
+	$a = $_fName
+    Else
+	if StringLeft($_fName, 1) == "." Then
+	    $_fName = StringTrimLeft($_fName, 2)
+	elseif StringLeft($_fName, 1) == "\" Then
+	    $_fName = StringTrimLeft($_fName, 1)
+	endif
+	$a = @WorkingDir & "\" & $_fName
+    EndIf
+    $fh = FileOpen ($a, 0) ; open file in read mode
+    If @error Then
+	Consolewrite(Stringformat("(Parse TX file) No file '%s'.\r\n", $a))
+	Return -1
+    EndIf
+    While True
+	$line = FileReadLine($fh)
+	if @error Then ExitLoop
+	if stringLen($line) = 0 Then ContinueLoop
+	if $line = @CRLF or $line = @LF or $line = @CR Then ContinueLoop
+	Consolewrite(Stringformat("(Parse TX file) Line: '%s'.\r\n", $line))
+	parseString($line)
+;~ 	$cmd[$cmdNo] = $line
+;~ 	$_cmdNo = $_cmdNo + 1
+    WEnd
+    FileClose($fh)
+    Return 0
+EndFunc
+
 
 Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
 ;~     Local $ending = ""

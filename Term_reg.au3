@@ -123,8 +123,12 @@ Func regLoadRXheadTail()
     Local $temp
     $temp = RegRead($REG_ROOT & "\Connection", "LastRXhead")
     GUICtrlSetData($inHead, $temp)
+    generateHeadTail($temp, 0)
+    $RXheadStr = $temp
     $temp = RegRead($REG_ROOT & "\Connection", "LastRXtail")
     GUICtrlSetData($InTail, $temp)
+    generateHeadTail($temp, 1)
+    $RXtailStr = $temp
 EndFunc
 
 
