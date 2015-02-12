@@ -484,9 +484,9 @@
 		</object>
 		<object type="TAGroup" name="gMacros">
 			<properties>
-				<property name="Left" vt="Int16">548</property>
+				<property name="Left" vt="Int16">472</property>
 				<property name="Top" vt="Int8">64</property>
-				<property name="Width" vt="Int8">105</property>
+				<property name="Width" vt="Int16">181</property>
 				<property name="Height" vt="Int8">69</property>
 				<property name="CtrlStyle" vt="Int32">1342308359</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>
@@ -495,13 +495,13 @@
 				<property name="Resizing" vt="Set"/>
 			</properties>
 			<components>
-				<object type="TAButton" name="bMacroWindow">
+				<object type="TAButton" name="bMacroW1">
 					<properties>
 						<property name="Left" vt="Int8">8</property>
 						<property name="Top" vt="Int8">20</property>
-						<property name="Width" vt="Int8">89</property>
+						<property name="Width" vt="Int8">25</property>
 						<property name="Height" vt="Int8">17</property>
-						<property name="Caption" vt="String">Macro Window -&gt;</property>
+						<property name="Caption" vt="String">M1</property>
 						<property name="TabOrder" vt="Int8">0</property>
 						<property name="Color" vt="Ident">clBtnFace</property>
 						<property name="CtrlStyle" vt="Int32">1342373888</property>
@@ -533,6 +533,81 @@
 						<property name="Height" vt="Int8">17</property>
 						<property name="Caption" vt="String">Save</property>
 						<property name="TabOrder" vt="Int8">2</property>
+						<property name="Color" vt="Ident">clBtnFace</property>
+						<property name="CtrlStyle" vt="Int32">1342373888</property>
+						<property name="CtrlExStyle" vt="Int8">0</property>
+						<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+					</properties>
+					<components/>
+				</object>
+				<object type="TAButton" name="bMacroW2">
+					<properties>
+						<property name="Left" vt="Int8">36</property>
+						<property name="Top" vt="Int8">20</property>
+						<property name="Width" vt="Int8">25</property>
+						<property name="Height" vt="Int8">17</property>
+						<property name="Caption" vt="String">M2</property>
+						<property name="TabOrder" vt="Int8">3</property>
+						<property name="Color" vt="Ident">clBtnFace</property>
+						<property name="CtrlStyle" vt="Int32">1342373888</property>
+						<property name="CtrlExStyle" vt="Int8">0</property>
+						<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+					</properties>
+					<components/>
+				</object>
+				<object type="TAButton" name="bMacroW3">
+					<properties>
+						<property name="Left" vt="Int8">64</property>
+						<property name="Top" vt="Int8">20</property>
+						<property name="Width" vt="Int8">25</property>
+						<property name="Height" vt="Int8">17</property>
+						<property name="Caption" vt="String">M3</property>
+						<property name="TabOrder" vt="Int8">4</property>
+						<property name="Color" vt="Ident">clBtnFace</property>
+						<property name="CtrlStyle" vt="Int32">1342373888</property>
+						<property name="CtrlExStyle" vt="Int8">0</property>
+						<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+					</properties>
+					<components/>
+				</object>
+				<object type="TAButton" name="bMacroW4">
+					<properties>
+						<property name="Left" vt="Int8">92</property>
+						<property name="Top" vt="Int8">20</property>
+						<property name="Width" vt="Int8">25</property>
+						<property name="Height" vt="Int8">17</property>
+						<property name="Caption" vt="String">M4</property>
+						<property name="TabOrder" vt="Int8">5</property>
+						<property name="Color" vt="Ident">clBtnFace</property>
+						<property name="CtrlStyle" vt="Int32">1342373888</property>
+						<property name="CtrlExStyle" vt="Int8">0</property>
+						<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+					</properties>
+					<components/>
+				</object>
+				<object type="TAButton" name="bMacroW5">
+					<properties>
+						<property name="Left" vt="Int8">120</property>
+						<property name="Top" vt="Int8">20</property>
+						<property name="Width" vt="Int8">25</property>
+						<property name="Height" vt="Int8">17</property>
+						<property name="Caption" vt="String">M5</property>
+						<property name="TabOrder" vt="Int8">6</property>
+						<property name="Color" vt="Ident">clBtnFace</property>
+						<property name="CtrlStyle" vt="Int32">1342373888</property>
+						<property name="CtrlExStyle" vt="Int8">0</property>
+						<property name="Resizing" vt="Set">DockWidth, DockHeight</property>
+					</properties>
+					<components/>
+				</object>
+				<object type="TAButton" name="bMacroW6">
+					<properties>
+						<property name="Left" vt="Int16">148</property>
+						<property name="Top" vt="Int8">20</property>
+						<property name="Width" vt="Int8">25</property>
+						<property name="Height" vt="Int8">17</property>
+						<property name="Caption" vt="String">M6</property>
+						<property name="TabOrder" vt="Int8">7</property>
 						<property name="Color" vt="Ident">clBtnFace</property>
 						<property name="CtrlStyle" vt="Int32">1342373888</property>
 						<property name="CtrlExStyle" vt="Int8">0</property>
@@ -683,7 +758,7 @@
 		</object>
 		<object type="TAGroup" name="gLog">
 			<properties>
-				<property name="Left" vt="Int16">464</property>
+				<property name="Left" vt="Int16">388</property>
 				<property name="Top" vt="Int8">64</property>
 				<property name="Width" vt="Int8">81</property>
 				<property name="Height" vt="Int8">69</property>
@@ -745,7 +820,7 @@
 			<properties>
 				<property name="Left" vt="Int16">188</property>
 				<property name="Top" vt="Int8">64</property>
-				<property name="Width" vt="Int16">273</property>
+				<property name="Width" vt="Int16">197</property>
 				<property name="Height" vt="Int8">69</property>
 				<property name="CtrlStyle" vt="Int32">1342308359</property>
 				<property name="CtrlExStyle" vt="Int8">0</property>

@@ -6,67 +6,67 @@
 
 Func checkHistory($_str)
     If StringLen($_str) = 0 Or $_str == $histLastString Or $_str == $history[decHistPointer($histLast)] Then
-	Return ; Unchanged string
+        Return ; Unchanged string
     EndIf
-;~     If $noHist then
-;~ 	newHistory($_str)
-;~ 	Return
-;~     EndIf
     newHistory($_str)
     Return
-EndFunc
+EndFunc   ;==>checkHistory
 
 Func newHistory($_str)
-    Local $incFirst = incHistPointer($histFirst)
     Local $incLast = incHistPointer($histLast)
     If $histFirst = incHistPointer($incLast) Then ; detect buffer overflow
-	; history full, roll first history forward
-	if $histFirst = $histCur Then $histCur = $incFirst
-	$histFirst = $incFirst
+        ; history full, roll first history forward
+        Local $incFirst = incHistPointer($histFirst)
+        If $histFirst = $histCur Then $histCur = $incFirst
+        $histFirst = $incFirst
     EndIf
     $history[$histLast] = $_str
-    If $histLast = incHistPointer($histCur) then $histCur = $histLast
+    If $histLast = incHistPointer($histCur) Then $histCur = $histLast
+    $histCur = $histLast
     $histLast = $incLast ; increment last history position
-;    $histCur = $histLast
-;    $history[$histLast] = ""
+    ;    $history[$histLast] = ""
     Return
-EndFunc
+EndFunc   ;==>newHistory
 
 Func historyNext()
     Local $incCur = incHistPointer($histCur)
-;    If $noHist = true then Return ; last command was sent and no history is selected
-    If $incCur = $histLast then
-	if $noHist = true then $noHist = False
-	Return
+    If $noHist = True Then Return ; last command was sent and no history is selected
+    If $incCur = $histLast Then
+        If $noHist = False Then
+            $noHist = True
+            GUICtrlSetData($InputTX, $inputTXscratch)
+            Return
+        EndIf
     EndIf
     $histCur = $incCur
-    GUICtrlSetData ($InputTX, $history[$histCur])
+    GUICtrlSetData($InputTX, $history[$histCur])
     Return
-EndFunc
+EndFunc   ;==>historyNext
 
 Func historyPrev()
     Local $decCur = decHistPointer($histCur)
-    if $noHist = true Then
-	$noHist = False
-	GUICtrlSetData ($InputTX, $history[$histCur])
-	Return
+    If $noHist = True Then
+        $noHist = False
+        $inputTXscratch = GUICtrlRead($InputTX)
+        GUICtrlSetData($InputTX, $history[$histCur])
+        Return
     EndIf
-    If $histCur = $histFirst then Return
-;    If $histCur = $histLast Then
-;	$history[$histLast] = GUICtrlRead($InputTX)
-;    EndIf
+    If $histCur = $histFirst Then Return
+    ;    If $histCur = $histLast Then
+    ;	$history[$histLast] = GUICtrlRead($InputTX)
+    ;    EndIf
     $histCur = $decCur
-    GUICtrlSetData ($InputTX, $history[$histCur])
+    GUICtrlSetData($InputTX, $history[$histCur])
     Return
-EndFunc
+EndFunc   ;==>historyPrev
 
 Func incHistPointer($_p)
-    If $_p = UBound($history)-1 Then Return 0
+    If $_p = UBound($history) - 1 Then Return 0
     Return ($_p + 1)
-EndFunc
+EndFunc   ;==>incHistPointer
 
 Func decHistPointer($_p)
     If $_p = 0 Then Return (UBound($history) - 1)
     Return ($_p - 1)
-EndFunc
+EndFunc   ;==>decHistPointer
 
