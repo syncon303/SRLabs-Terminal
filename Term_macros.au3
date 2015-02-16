@@ -1,7 +1,7 @@
 
 ; This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 ; To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/deed.en_US.
-
+#include <Misc.au3>
 
 Func readMacroFile()
     Local $path
@@ -222,11 +222,27 @@ EndFunc   ;==>generateHeadTail
 
 Func macroEventSend()
     Local $DEBUG = 1
-    ConsoleWrite(stringformat("tuki, ctrlID = %d\n", @GUI_CtrlId))
+;~     ConsoleWrite(stringformat("tuki, ctrlID = %d\n", @GUI_CtrlId))
     For $i = 0 To $MACRO_NUMBER - 1
         If @GUI_CtrlId = $bMcrSend[$i] Then ;Or @GUI_CTRLID = $iMcr[$i] Then
-			If $DEBUG Then ConsoleWrite("Send macro " & $i + $BankFirst & ",data: " & $macroString[$i + $BankFirst] & @CRLF)
-			Return macroSend($i + $BankFirst)
+            local $keyM = 0
+            if _IsPressed("10") then
+                local $j = Dec("70")
+                $keyM = 1
+                for $j = Dec("70") to Dec("7B")
+                    if _IsPressed(Hex($j)) then
+                        $keyM = 0
+                        ExitLoop
+                    EndIf
+                Next
+            EndIf
+            if $keyM Then ; if Shift is pressed copy macro to input box
+                GUICtrlSetData ($InputTX, $macroString[$i + $BankFirst])
+                Return 0
+            else
+                If $DEBUG Then ConsoleWrite("Send macro " & $i + $BankFirst & ",data: " & $macroString[$i + $BankFirst] & @CRLF)
+                Return macroSend($i + $BankFirst)
+            EndIf
         EndIf
     Next
 EndFunc   ;==>macroEventSend
