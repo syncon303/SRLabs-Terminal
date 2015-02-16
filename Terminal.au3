@@ -248,36 +248,35 @@ GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 
-$gRXfilter = GUICtrlCreateGroup("Receive head / tail filter", 0, 60, 138, 69)
-
-$checkEnableRXfilter = GUICtrlCreateLabel("On", 4, 75, 16, 21, BitOR($GUI_SS_DEFAULT_CHECKBOX,$BS_MULTILINE))
+$gRXfilter = GUICtrlCreateGroup("Receive head / tail filter", 0, 60, 138, 64)
+$labEnableRXfilter = GUICtrlCreateLabel("On", 4, 77, 16, 19, BitOR($GUI_SS_DEFAULT_CHECKBOX,$BS_MULTILINE))
 $checkEnableRXfilter = GUICtrlCreateCheckbox("", 4, 92, 16, 16, BitOR($GUI_SS_DEFAULT_CHECKBOX,$BS_MULTILINE))
-$InHead = GUICtrlCreateInput("", 22, 76, 112, 21)
-$InTail = GUICtrlCreateInput("", 22, 102, 112, 21)
+$InHead = GUICtrlCreateInput("", 22, 76, 112, 20)
+$InTail = GUICtrlCreateInput("", 22, 99, 112, 20)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$Group1 = GUICtrlCreateGroup("", 141, 60, 272, 69)
-$cClearRX = GUICtrlCreateButton("Clear RX buffer", 145, 80, 81, 17)
-$chkShowBlanks = GUICtrlCreateCheckbox("Show blank chars", 145, 104, 109, 17)
+$Group1 = GUICtrlCreateGroup("", 141, 60, 272, 64)
+$cClearRX = GUICtrlCreateButton("Clear RX buffer", 145, 78, 81, 17)
+$chkShowBlanks = GUICtrlCreateCheckbox("Show blank chars", 145, 101, 109, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$gLog = GUICtrlCreateGroup("Logging", 416, 60, 73, 69)
-$bSelectLog = GUICtrlCreateButton("Select file", 420, 80, 65, 17)
-$bStartLog = GUICtrlCreateButton("Start", 420, 104, 29, 17)
-$bStopLog = GUICtrlCreateButton("Stop", 456, 104, 29, 17)
+$gLog = GUICtrlCreateGroup("Logging", 416, 60, 73, 64)
+$bSelectLog = GUICtrlCreateButton("Select file", 420, 78, 65, 17)
+$bStartLog = GUICtrlCreateButton("Start", 420, 102, 29, 17)
+$bStopLog = GUICtrlCreateButton("Stop", 456, 102, 29, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$gMacros = GUICtrlCreateGroup("Macros", 492, 60, 93, 69)
-$bMacroWindow = GUICtrlCreateButton("Macro Window ->", 496, 80, 85, 17)
-$bLoadMacro = GUICtrlCreateButton("Load", 496, 104, 39, 17)
-$bSaveMacro = GUICtrlCreateButton("Save", 542, 104, 39, 17)
+$gMacros = GUICtrlCreateGroup("Macros", 492, 60, 93, 64)
+$bMacroWindow = GUICtrlCreateButton("Macro Window ->", 496, 78, 85, 17)
+$bLoadMacro = GUICtrlCreateButton("Load", 496, 102, 39, 17)
+$bSaveMacro = GUICtrlCreateButton("Save", 542, 102, 39, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 $editTX = GUICtrlCreateEdit("", 0, 612, 585, 53, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
 GUICtrlSetFont(-1, 9, 400, 0, "Courier New")
 GUICtrlSetColor(-1, 0x000000)
 ;~ $editRX = GUICtrlCreateEdit("", 0, 136, 653, 389, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
-$editRX = _GUICtrlRichEdit_Create($Terminal, "", 0, 130, 585, 459, BitOR($ES_AUTOVSCROLL, $ES_READONLY, $WS_VSCROLL, $ES_MULTILINE)) ;
+$editRX = _GUICtrlRichEdit_Create($Terminal, "", 0, 125, 585, 464, BitOR($ES_AUTOVSCROLL, $ES_READONLY, $WS_VSCROLL, $ES_MULTILINE)) ;
 _GUICtrlRichEdit_SetBkColor($editRX, $DefREbgColor) ; background black
 _GUICtrlRichEdit_SetCharBkColor($editRX, $DefREtxtBgColor) ; background black
 _GUICtrlRichEdit_SetCharColor($editRX, $DefREtxtColor)
