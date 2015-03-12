@@ -679,6 +679,7 @@ Func toggleCOMconnection()
     If $ConOpen = $connectCOM Then
         _CloseComm($hCOM)
         GUICtrlSetData($bConnect, "Connect")
+        WinSetTitle($Terminal,"", $TermTitle)
         $ConOpen = $connectNone
         Return 0
     Else
@@ -704,6 +705,7 @@ Func toggleCOMconnection()
         regStoreCOMport()
         $ConOpen = $connectCOM
         GUICtrlSetData($bConnect, "Disconnect")
+        WinSetTitle($Terminal, "", StringFormat("%s | Connected to %s @ %s baud", $TermTitle,  GUICtrlRead ($cCOM), GUICtrlRead ($cBaud)) )
         Return 0
     EndIf
 EndFunc   ;==>toggleCOMconnection
@@ -712,6 +714,7 @@ Func toggleLANconnection()
     If $ConOpen = $connectLAN Then
         TCPCloseSocket($hCOM)
         GUICtrlSetData($bConnect, "Connect")
+        WinSetTitle($Terminal, "", $TermTitle)
         $ConOpen = $connectNone
         Return 0
     Else
@@ -744,6 +747,7 @@ Func toggleLANconnection()
         regStoreLAN()
         $ConOpen = $connectLAN
         GUICtrlSetData($bConnect, "Disconnect")
+        WinSetTitle($Terminal, "", StringFormat("%s | Connected to %s : %d", $TermTitle,  GUICtrlRead ($iIP), GUICtrlRead ($iPort)) )
         Return 0
     EndIf
 EndFunc   ;==>toggleLANconnection
@@ -753,6 +757,7 @@ Func toggleVISAconnection()
     If $ConOpen = $connectVISA Then
         _viClose($hCOM)
         GUICtrlSetData($bConnect, "Connect")
+        WinSetTitle($Terminal, "", $TermTitle)
         $ConOpen = $connectNone
         Return 0
     Else
@@ -766,6 +771,7 @@ Func toggleVISAconnection()
         regStoreVISA()
         $ConOpen = $connectVISA
         GUICtrlSetData($bConnect, "Disconnect")
+        WinSetTitle($Terminal, "", StringFormat("%s | Connected to %s", $TermTitle,  GUICtrlRead ($iVISAaddr)) )
         Return 0
     EndIf
 EndFunc   ;==>toggleVISAconnection

@@ -192,58 +192,61 @@ EndFunc   ;==>captureENTER
 
 local $__initTime = TimerInit()
 
+local $TermTitle = "SRLabs Terminal - " & FileGetVersion(@ScriptFullPath)
+
+
 #region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
 ;$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath), 654, 666, -1, -1, -1, -1)
-$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath), 586, 666, -1, -1, -1, -1)
+$Terminal = GUICreate($TermTitle, 585, 666, -1, -1, -1, $WS_EX_ACCEPTFILES)
 
-$Connection = GUICtrlCreateGroup("", 0, 0, 123, 60) ; Connection group
-$rCOM = GUICtrlCreateRadio("COM", 4, 10, 41, 15)
-$rLAN = GUICtrlCreateRadio("LAN", 4, 26, 41, 15)
-$rVISA = GUICtrlCreateRadio("VXI", 4, 42, 41, 15)
-$bConnect = GUICtrlCreateButton("Connect", 52, 12, 65, 17)
-$bScanCOM = GUICtrlCreateButton("Scan", 52, 37, 65, 17)
+$Connection = GUICtrlCreateGroup("", 0, 0, 104, 60) ; Connection group
+$bConnect = GUICtrlCreateButton("Connect", 4, 12, 49, 17)
+$bScanCOM = GUICtrlCreateButton("Scan", 4, 37, 49, 17)
+$rCOM = GUICtrlCreateRadio("COM", 56, 10, 41, 15)
+$rLAN = GUICtrlCreateRadio("LAN", 56, 26, 41, 15)
+$rVISA = GUICtrlCreateRadio("VXI", 56, 42, 41, 15)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$gCOMset = GUICtrlCreateGroup("", 126, 0, 439, 60) ;Com group
-$gCOMPort = GUICtrlCreateGroup("COM port", 132, 8, 69, 48)
-$cCOM = GUICtrlCreateCombo("", 136, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gCOMset = GUICtrlCreateGroup("", 106, 0, 387, 60) ;Com group
+$gCOMPort = GUICtrlCreateGroup("COM port", 110, 8, 69, 48)
+$cCOM = GUICtrlCreateCombo("", 114, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gBaudrate = GUICtrlCreateGroup("Baudrate", 204, 8, 77, 48)
-$cBaud = GUICtrlCreateCombo("", 208, 28, 69, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gBaudrate = GUICtrlCreateGroup("Baudrate", 182, 8, 69, 48)
+$cBaud = GUICtrlCreateCombo("", 186, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "600|1200|2400|4800|9600|14400|19200|28800|38400|56000|57600|115200|128000|256000", "115200")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gData = GUICtrlCreateGroup("Data bits", 284, 8, 57, 48)
-$cData = GUICtrlCreateCombo("", 288, 28, 49, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gData = GUICtrlCreateGroup("Data", 254, 8, 41, 48)
+$cData = GUICtrlCreateCombo("", 258, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "5|6|7|8", "8")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gParity = GUICtrlCreateGroup("Parity", 344, 8, 65, 48)
-$cParity = GUICtrlCreateCombo("", 348, 28, 57, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gParity = GUICtrlCreateGroup("Parity", 298, 8, 59, 48)
+$cParity = GUICtrlCreateCombo("", 302, 28, 51, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "none|odd|even|mark|space", "none")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gStopB = GUICtrlCreateGroup("Stop bits", 412, 8, 57, 48)
-$cStopbits = GUICtrlCreateCombo("", 416, 28, 49, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gStopB = GUICtrlCreateGroup("Stop", 360, 8, 41, 48)
+$cStopbits = GUICtrlCreateCombo("", 364, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "1|1.5|2", "1")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gHandshake = GUICtrlCreateGroup("Handshake", 472, 8, 89, 48)
-$cHandShake = GUICtrlCreateCombo("", 476, 28, 81, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gHandshake = GUICtrlCreateGroup("Handshake", 404, 8, 85, 48)
+$cHandShake = GUICtrlCreateCombo("", 408, 28, 77, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "none|RTS/CTS|XON/XOFF|RTS+XON", "none")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 
-$gLANsettings = GUICtrlCreateGroup("", 128, 0, 309, 60)
-$gIP = GUICtrlCreateGroup("IP address", 132, 8, 201, 48)
-$iIP = GUICtrlCreateInput("", 140, 28, 185, 21)
+$gLANsettings = GUICtrlCreateGroup("", 106, 0, 265, 60)
+$gIP = GUICtrlCreateGroup("IP address", 110, 8, 201, 48)
+$iIP = GUICtrlCreateInput("", 114, 28, 193, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gLANBport = GUICtrlCreateGroup("Port", 336, 8, 97, 48)
-$iPort = GUICtrlCreateInput("", 344, 28, 81, 21)
+$gLANBport = GUICtrlCreateGroup("Port", 314, 8, 53, 48)
+$iPort = GUICtrlCreateInput("", 318, 28, 45, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 
-$gVISAset = GUICtrlCreateGroup("", 128, 0, 349, 60)
-$gVISAaddr = GUICtrlCreateGroup("VXI address", 132, 8, 341, 48)
-$iVISAaddr = GUICtrlCreateInput("", 140, 28, 329, 21)
+$gVISAset = GUICtrlCreateGroup("", 106, 0, 349, 60)
+$gVISAaddr = GUICtrlCreateGroup("VXI address", 110, 8, 341, 48)
+$iVISAaddr = GUICtrlCreateInput("", 114, 28, 333, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
@@ -330,10 +333,10 @@ For $i = 0 To $MACRO_PER_BANK - 1
 	Local $top = $MCR_GRP_TOP + 16 + 1*$rowHeight
 	local $yoff = Mod($i, $MACRO_PER_BANK)
 	$iMcr[$i] = GUICtrlCreateInput("", $MCR_GRP_LEFT + 4, $top + ($MCR_ROW_HEIGHT * $yoff), $MACRO_INPUT_W, 21)
-	GUICtrlSetState(-1, $GUI_HIDE)
+	GUICtrlSetState(-1, $GUI_HIDE + $GUI_DROPACCEPTED)
 	$bMcrSend[$i] = GUICtrlCreateButton("M" & $i + 1, $MCR_GRP_LEFT + 248, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
 	GUICtrlSetState(-1, $GUI_HIDE)
-	$iMcrRT[$i] = GUICtrlCreateInput("1000", $MCR_GRP_LEFT + 284, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
+	$iMcrRT[$i] = GUICtrlCreateInput("1000", $MCR_GRP_LEFT + 284, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21, -1)
 	GUICtrlSetState(-1, $GUI_HIDE)
 	$checkMcrRsend[$i] = GUICtrlCreateCheckbox("", $MCR_GRP_LEFT + 321, $top + 2 + ($MCR_ROW_HEIGHT * $yoff), 17, 17)
 	GUICtrlSetState(-1, $GUI_HIDE)
@@ -369,6 +372,7 @@ GUICtrlSetOnEvent($checkCRLF, "regStoreGUI")
 GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEvents")
 GUISetOnEvent($GUI_EVENT_MINIMIZE, "SpecialEvents")
 GUISetOnEvent($GUI_EVENT_RESTORE, "SpecialEvents")
+GUISetOnEvent($GUI_EVENT_DROPPED, "DropParse")
 
 GUICtrlSetOnEvent($rCOM, "ShowCommdialog")
 GUICtrlSetOnEvent($rLAN, "ShowCommdialog")
@@ -501,7 +505,27 @@ Func Mainloop()
 EndFunc   ;==>Mainloop
 
 
-
+Func DropParse ()
+    Local $fname = @GUI_DragFile, $did = @GUI_DropId
+    Local $i
+    ConsoleWrite(StringFormat("drop name = '%s",$fname))
+    for $i = 0 to $MACRO_PER_BANK - 1
+        if $did == $iMcr[$i] Then
+            ConsoleWrite(StringFormat(", dropped to macro $d",$i+1))
+            ExitLoop
+        EndIf
+    Next
+    If $i < $MACRO_PER_BANK then
+        ; check if this is a valid file
+        local $str
+        if FileExists ( $fname) then
+            $fname = '%file="' & $fname &'"'
+            ConsoleWrite(stringformat("-> %s, file exists.\n",$fname))
+        endif
+        GUICtrlSetData($iMcr[$i],$fname)
+        parseMacroEntry($BankFirst+$i)
+    EndIf
+EndFunc
 
 
 Func makeMacroWindow()
@@ -532,7 +556,7 @@ Next
         Local $top = $offtop + 1*$rowHeight
         local $yoff = Mod($i, $MACRO_PER_BANK)
         $iMcr[$i] = GUICtrlCreateInput("", $offleft + 4, $top + ($MCR_ROW_HEIGHT * $yoff), $MACRO_INPUT_W, 21)
-;~         GUICtrlSetState(-1, $GUI_HIDE)
+        GUICtrlSetState(-1,  $GUI_DROPACCEPTED)
         $bMcrSend[$i] = GUICtrlCreateButton("M" & $i + 1, $offleft + 248, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
 ;~         GUICtrlSetState(-1, $GUI_HIDE)
         $iMcrRT[$i] = GUICtrlCreateInput("1000", $offleft + 284, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
@@ -726,7 +750,7 @@ Func showDialog($_type, $_init = 0)
             scanCOMports()
             regLoadLastCOMport()
         EndIf
-    Else
+    ElseIf $_type = $useVISA Then
         GUICtrlSetState($rCOM, $GUI_UNCHECKED)
         GUICtrlSetState($gCOMset, $GUI_HIDE)
         GUICtrlSetState($bScanCOM, $GUI_HIDE)
@@ -756,6 +780,31 @@ Func showDialog($_type, $_init = 0)
         GUICtrlSetState($iVISAaddr, $GUI_SHOW)
         If $ConOpen = $connectCOM Then toggleCOMconnection()
         If $ConOpen = $connectLAN Then toggleLANconnection()
+    Else
+        GUICtrlSetState($gCOMset, $GUI_HIDE)
+        GUICtrlSetState($bScanCOM, $GUI_HIDE)
+        GUICtrlSetState($gCOMPort, $GUI_HIDE)
+        GUICtrlSetState($cCOM, $GUI_HIDE)
+        GUICtrlSetState($gBaudrate, $GUI_HIDE)
+        GUICtrlSetState($cBaud, $GUI_HIDE)
+        GUICtrlSetState($gData, $GUI_HIDE)
+        GUICtrlSetState($cData, $GUI_HIDE)
+        GUICtrlSetState($gParity, $GUI_HIDE)
+        GUICtrlSetState($cParity, $GUI_HIDE)
+        GUICtrlSetState($gStopB, $GUI_HIDE)
+        GUICtrlSetState($cStopbits, $GUI_HIDE)
+        GUICtrlSetState($gHandshake, $GUI_HIDE)
+        GUICtrlSetState($cHandShake, $GUI_HIDE)
+
+        GUICtrlSetState($gLANsettings, $GUI_HIDE)
+        GUICtrlSetState($gIP, $GUI_HIDE)
+        GUICtrlSetState($iIP, $GUI_HIDE)
+        GUICtrlSetState($gLANBport, $GUI_HIDE)
+        GUICtrlSetState($iPort, $GUI_HIDE)
+
+        GUICtrlSetState($gVISAset, $GUI_HIDE)
+        GUICtrlSetState($gVISAaddr, $GUI_HIDE)
+        GUICtrlSetState($iVISAaddr, $GUI_HIDE)
     EndIf
     If Not $_init Then regStoreCommType($_type)
 EndFunc   ;==>showDialog

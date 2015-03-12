@@ -325,7 +325,7 @@ Func macrosVisible($_on)
     Next
 	For $i = 0 To $MACRO_PER_BANK - 1
 		GUICtrlSetPos($iMcr[$i], Default, Default, $MACRO_INPUT_W)
-		GUICtrlSetState($iMcr[$i], $task) ;--
+		GUICtrlSetState($iMcr[$i],$task + $GUI_DROPACCEPTED) ;--
 		GUICtrlSetState($bMcrSend[$i], $task) ;--
 		GUICtrlSetState($iMcrRT[$i], $task) ;--
 		GUICtrlSetState($checkMcrRsend[$i], $task) ; --
