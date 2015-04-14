@@ -51,7 +51,6 @@ Global $editTXcount = 0, $editRXcount = 0
 Global $RXhead[2], $RXheadEcho, $RXtail ; parsed head/tail strings
 Global $RXheadStr, $RXTailStr ; combined head/tail strings
 Global $TXsent = 0, $TXtimeStamp[10] ; count the transmits
-Global $useDelimiters = 0
 Global $rxDelimStr = ""
 
 Global $hLog, $logEnabled = 0, $logFileSelected = 0
@@ -199,32 +198,32 @@ local $TermTitle = "SRLabs Terminal - " & FileGetVersion(@ScriptFullPath)
 ;$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath), 654, 666, -1, -1, -1, -1)
 $Terminal = GUICreate($TermTitle, 585, 666, -1, -1, -1, $WS_EX_ACCEPTFILES)
 
-$Connection = GUICtrlCreateGroup("", 0, 0, 104, 60) ; Connection group
-$bConnect = GUICtrlCreateButton("Connect", 4, 12, 49, 17)
-$bScanCOM = GUICtrlCreateButton("Scan", 4, 37, 49, 17)
-$rCOM = GUICtrlCreateRadio("COM", 56, 10, 41, 15)
-$rLAN = GUICtrlCreateRadio("LAN", 56, 26, 41, 15)
-$rVISA = GUICtrlCreateRadio("VXI", 56, 42, 41, 15)
+$Connection = GUICtrlCreateGroup("", 0, 0, 114, 60) ; Connection group
+$bConnect = GUICtrlCreateButton("Connect", 4, 12, 59, 17)
+$bScanCOM = GUICtrlCreateButton("Scan", 4, 37, 59, 17)
+$rCOM = GUICtrlCreateRadio("COM", 66, 10, 41, 15)
+$rLAN = GUICtrlCreateRadio("LAN", 66, 26, 41, 15)
+$rVISA = GUICtrlCreateRadio("VXI", 66, 42, 41, 15)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$gCOMset = GUICtrlCreateGroup("", 106, 0, 387, 60) ;Com group
-$gCOMPort = GUICtrlCreateGroup("COM port", 110, 8, 69, 48)
-$cCOM = GUICtrlCreateCombo("", 114, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gCOMset = GUICtrlCreateGroup("", 116, 0, 377, 60) ;Com group
+$gCOMPort = GUICtrlCreateGroup("COM port", 120, 8, 69, 48)
+$cCOM = GUICtrlCreateCombo("", 124, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gBaudrate = GUICtrlCreateGroup("Baudrate", 182, 8, 69, 48)
-$cBaud = GUICtrlCreateCombo("", 186, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gBaudrate = GUICtrlCreateGroup("Baudrate", 190, 8, 69, 48)
+$cBaud = GUICtrlCreateCombo("", 194, 28, 61, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "600|1200|2400|4800|9600|14400|19200|28800|38400|56000|57600|115200|128000|256000", "115200")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gData = GUICtrlCreateGroup("Data", 254, 8, 41, 48)
-$cData = GUICtrlCreateCombo("", 258, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gData = GUICtrlCreateGroup("Data", 260, 8, 41, 48)
+$cData = GUICtrlCreateCombo("", 264, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "5|6|7|8", "8")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gParity = GUICtrlCreateGroup("Parity", 298, 8, 59, 48)
-$cParity = GUICtrlCreateCombo("", 302, 28, 51, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gParity = GUICtrlCreateGroup("Parity", 302, 8, 59, 48)
+$cParity = GUICtrlCreateCombo("", 306, 28, 51, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "none|odd|even|mark|space", "none")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gStopB = GUICtrlCreateGroup("Stop", 360, 8, 41, 48)
-$cStopbits = GUICtrlCreateCombo("", 364, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+$gStopB = GUICtrlCreateGroup("Stop", 362, 8, 41, 48)
+$cStopbits = GUICtrlCreateCombo("", 366, 28, 33, 25, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
 GUICtrlSetData(-1, "1|1.5|2", "1")
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 $gHandshake = GUICtrlCreateGroup("Handshake", 404, 8, 85, 48)
@@ -234,19 +233,19 @@ GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 
-$gLANsettings = GUICtrlCreateGroup("", 106, 0, 265, 60)
-$gIP = GUICtrlCreateGroup("IP address", 110, 8, 201, 48)
-$iIP = GUICtrlCreateInput("", 114, 28, 193, 21)
+$gLANsettings = GUICtrlCreateGroup("", 116, 0, 265, 60)
+$gIP = GUICtrlCreateGroup("IP address", 120, 8, 201, 48)
+$iIP = GUICtrlCreateInput("", 124, 28, 193, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
-$gLANBport = GUICtrlCreateGroup("Port", 314, 8, 53, 48)
-$iPort = GUICtrlCreateInput("", 318, 28, 45, 21)
+$gLANBport = GUICtrlCreateGroup("Port", 324, 8, 53, 48)
+$iPort = GUICtrlCreateInput("", 328, 28, 45, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
 
-$gVISAset = GUICtrlCreateGroup("", 106, 0, 349, 60)
-$gVISAaddr = GUICtrlCreateGroup("VXI address", 110, 8, 341, 48)
-$iVISAaddr = GUICtrlCreateInput("", 114, 28, 333, 21)
+$gVISAset = GUICtrlCreateGroup("", 116, 0, 349, 60)
+$gVISAaddr = GUICtrlCreateGroup("VXI address", 120, 8, 341, 48)
+$iVISAaddr = GUICtrlCreateInput("", 124, 28, 333, 21)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState(-1, $GUI_DISABLE)
@@ -477,7 +476,7 @@ Func Mainloop()
     If $ConOpen = $connectCOM Or $ConOpen = $connectLAN Then
         readRXbuffer()
     EndIf
-    If $useDelimiters Then
+    If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) == $GUI_CHECKED Then
         If GUICtrlRead($InHead) <> $RXheadStr Then parseRXhead()
         If GUICtrlRead($InTail) <> $RXTailStr Then parseRXtail()
     EndIf
@@ -605,11 +604,11 @@ Func switchToInputTX()
 EndFunc   ;==>switchToInputTX
 
 Func changeDelimUsage()
-    If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) = $GUI_CHECKED Then
-        $useDelimiters = 1
-    Else
-        $useDelimiters = 0
-    EndIf
+;~     If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) = $GUI_CHECKED Then
+;~         $useDelimiters = 1
+;~     Else
+;~         $useDelimiters = 0
+;~     EndIf
 EndFunc   ;==>changeDelimUsage
 
 

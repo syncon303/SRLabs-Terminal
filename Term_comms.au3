@@ -218,7 +218,7 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
                         Local $quote = ""
                         If StringInStr($b, "'") Then
                             $quote = "'"
-                        ElseIf StringInStr($b, "'") Then
+                        ElseIf StringInStr($b, '"') Then
                             $quote = '"'
                         EndIf
                         If $quote <> "" Then
@@ -358,7 +358,7 @@ Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
 ;~     EndIf
 ;~     $tx &= $ending
     ; send the string out
-    If $useDelimiters Then
+    If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) == $GUI_CHECKED Then
         While $TXsent <> 0
             If TimerDiff($TXtimeStamp[$TXsent]) > 2000 Then
                 If $DEBUG Then ConsoleWrite(StringFormat("Tail detection timeout.\nBuffer content = '%s'\n", $rxDelimStr))
@@ -398,7 +398,7 @@ Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
         Return 0 ; not connected
     EndIf
     ; Update TX output field
-    If $useDelimiters Then
+    If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) == $GUI_CHECKED Then
         $TXsent += 1
         $TXtimeStamp[$TXsent] = TimerInit()
     EndIf
@@ -457,7 +457,7 @@ Func readRXbuffer()
     If $rxbuf == "" Then Return
     writeRXdata($rxbuf)
     ; check if tail can be found in the received string
-    If $useDelimiters And $TXsent <> 0 Then
+    If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) == $GUI_CHECKED And $TXsent <> 0 Then
         $rxDelimStr &= $rxbuf
         Local $s = StringInStr($rxDelimStr, $RXtail)
         If $s <> 0 Then
