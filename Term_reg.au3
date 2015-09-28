@@ -49,6 +49,14 @@ EndFunc   ;==>regLoadDirectories
 ;
 
 Func regLoadGUI()
+    $WinPosX = RegRead($REG_ROOT, "WindowPositionX")
+    If @error or $WinPosX < -$WindowWidth + 40 or $WinPosX >= @DesktopWidth - 40 Then
+        $WinPosX = (@DesktopWidth - $WindowWidth) / 2
+    EndIf
+    $WinPosY = RegRead($REG_ROOT, "WindowPositionY")
+    If @error or $WinPosY < -20 or $WinPosY >= @DesktopHeight - 20 Then
+        $WinPosY = @DesktopHeight / 10
+    EndIf
     ; load newline character settings from registry
     Local $reg = RegRead($REG_ROOT, "NewLine")
     If $reg = "" Or $reg = "CRLF" Then
@@ -223,20 +231,56 @@ Func regReadMacros()
     If @error Then
         $ShowMacros = 0
     EndIf
+    $MacrosFloat = RegRead($REG_ROOT, "FloatMacros")
+    If @error Then
+        $MacrosFloat = 0
+    EndIf
+    if $MacrosFloat <> 0 Then
+        GUICtrlSetState($checkMcrFloat, $GUI_CHECKED)
+    else
+        GUICtrlSetState($checkMcrFloat, $GUI_UNCHECKED)
+    EndIf
+
+    $McrWinPosX = RegRead($REG_ROOT, "MacroWindowPositionX")
+    If @error or $McrWinPosX < -$MCR_GRP_WIDTH + 40 or $McrWinPosX >= @DesktopWidth - 40 Then
+        $McrWinPosX = (@DesktopWidth - $MCR_GRP_WIDTH) / 2
+    EndIf
+    $McrWinPosY = RegRead($REG_ROOT, "MacroWindowPositionY")
+    If @error or $McrWinPosY < -20 or $McrWinPosY >= @DesktopHeight - 20 Then
+        $McrWinPosY = @DesktopHeight / 10
+    EndIf
+    $curMbank = RegRead($REG_ROOT, "CurrentMacroBank")
+    If @error Or ($curMbank >= $MACRO_BANKS or $curMbank < 0) Then
+        $curMbank = 0
+    EndIf
     For $i = 0 To $MACRO_NUMBER - 1
         $no = $i + 1
         If StringLen($no) = 1 Then $no = "0" & $no
         $macroString[$i] = RegRead($REG_ROOT & "\Macros", "M" & $no & "_string")
-            if $i >= $BankFirst and $i < $BankFirst + $MACRO_PER_BANK then
-                GUICtrlSetData($iMcr[$i-$BankFirst], $macroString[$i])
-            EndIf
+        if $i >= $BankFirst and $i < $BankFirst + $MACRO_PER_BANK then
+            GUICtrlSetData($iMcr[$i-$BankFirst], $macroString[$i])
+        EndIf
     Next
 EndFunc   ;==>regReadMacros
 
 Func regStoreMacroVisibility()
     RegWrite($REG_ROOT, "ShowMacros", "REG_SZ", $ShowMacros)
+    RegWrite($REG_ROOT, "FloatMacros", "REG_SZ", $MacrosFloat)
 EndFunc   ;==>regStoreMacroVisibility
 
+Func regStoreMacroBank()
+    RegWrite($REG_ROOT, "CurrentMacroBank", "REG_SZ", $curMbank)
+EndFunc
+
+Func regStoreMacroWinPos()
+    RegWrite($REG_ROOT, "MacroWindowPositionX", "REG_SZ", $McrWinPosX)
+    RegWrite($REG_ROOT, "MacroWindowPositionY", "REG_SZ", $McrWinPosY)
+EndFunc
+
+Func regStoreWinPos()
+    RegWrite($REG_ROOT, "WindowPositionX", "REG_SZ", $WinPosX)
+    RegWrite($REG_ROOT, "WindowPositionY", "REG_SZ", $WinPosY)
+EndFunc
 
 Func registryError($_err)
     Switch $_err

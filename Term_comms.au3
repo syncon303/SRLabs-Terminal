@@ -422,8 +422,6 @@ Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
 EndFunc   ;==>sendData
 
 
-
-
 Func tcpRXwait($_sock, $BufferSize = 1024, $firstWaitTime = 500, $charWaitTime = 100)
     Local $rxbuf = ""
     Local $tmr = TimerInit(), $charTime, $firstChar = 0
@@ -469,6 +467,7 @@ Func readRXbuffer()
     EndIf
 EndFunc   ;==>readRXbuffer
 
+
 Func convertBlanks($_s)
     local $so = $_s
     $so = StringReplace($so,@TAB, "\t")
@@ -478,6 +477,7 @@ Func convertBlanks($_s)
     $so = StringReplace($so,Chr(11), "\v")
     Return $so
 EndFunc
+
 
 Func EditRXappendText($_s, $DEBUG = 0)
     Local $curCtrl = ControlGetFocus("")
@@ -496,6 +496,7 @@ Func EditRXappendText($_s, $DEBUG = 0)
     If $DEBUG Then ConsoleWrite(StringFormat("Write '%s'", $_s))
     ControlFocus("", "", $curCtrl)
 EndFunc   ;==>EditRXappendText
+
 
 Func writeRXdata($_str, $blockES = 0, $DEBUG = 0, $DEBUG_ES = 0)
     Local $curCtrl = ControlGetFocus("")
@@ -620,6 +621,7 @@ Func ParseES($_str, $DEBUG = 0)
 
 EndFunc   ;==>ParseES
 
+
 Func DimColor($_c, $DEBUG = 0)
     Local $r, $g, $b
     $r = Floor($_c / 65536)
@@ -633,6 +635,7 @@ Func DimColor($_c, $DEBUG = 0)
     If $DEBUG Then ConsoleWrite(StringFormat(" #%s (%d,%d,%d)\n", Hex($_c), $r, $g, $b))
     Return $_c
 EndFunc   ;==>DimColor
+
 
 Func BrightColor($_c, $DEBUG = 0)
     Local $r, $g, $b
@@ -675,6 +678,7 @@ Func EscCodeToColor($_c)
     EndSwitch
 EndFunc   ;==>EscCodeToColor
 
+
 Func toggleCOMconnection()
     If $ConOpen = $connectCOM Then
         _CloseComm($hCOM)
@@ -709,6 +713,7 @@ Func toggleCOMconnection()
         Return 0
     EndIf
 EndFunc   ;==>toggleCOMconnection
+
 
 Func toggleLANconnection()
     If $ConOpen = $connectLAN Then

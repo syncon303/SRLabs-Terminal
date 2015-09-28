@@ -38,7 +38,7 @@ TCPStartup()
 Global Enum $connectNone = 0, $connectCOM, $connectLAN, $connectVISA
 Global Enum $useCOM = 0, $useLAN, $useVISA
 Global $cMaxEditLen = 25000
-Global $Terminal, $inputTX, $termMain, $editRX, $winMacro
+Global $Terminal, $inputTX, $termMain, $editRX
 
 Global $COMlist[200], $COMcount = 0, $curCOM = 0
 Global $hCOM
@@ -65,13 +65,28 @@ Global $hVISAdll = 0
 #include "visa_functions.au3"
 ;~ #include <Visa.au3>
 
+
+; =========================================================================
+; Macro variables
+; =========================================================================
+
+
 Global Const $MACRO_PER_BANK = 26, $MACRO_BANKS = 10, $MACRO_NUMBER = $MACRO_PER_BANK * $MACRO_BANKS
 Global $curMbank = 0, $BankFirst
 Global $iMcr[$MACRO_NUMBER], $bMcrSend[$MACRO_NUMBER], $iMcrRT[$MACRO_NUMBER], $checkMcrRsend[$MACRO_NUMBER]
 Global $radioBank[$MACRO_BANKS]
 Global $mcrRepeat = False, $mcrRptCur = 0
+; Buffers for macro strings, repeat times and repeat flags, respectively
+Global $macroString[$MACRO_NUMBER], $macroRptTime[$MACRO_NUMBER], $macroRpt[$MACRO_NUMBER]
 
-Global $ShowMacros = 0
+Global $ShowMacros = 0 ; flag signalling if macro objects are drawn on screen/ macro window is opened
+Global $MacroWindow, $MacroHandle ; MacroHandle is window handle, MacroWindow is pointer to either main or macro window
+Global $MacrosFloat = 0 ; Flag signalling the docked(0) / floating(1) macro window
+Global $McrWinPosX = 0,$McrWinPosY = 0 ; on-screen position of floating macro window
+
+; =========================================================================
+
+
 
 Global $mainTime1 = TimerInit()
 Global $mainState = 0
@@ -157,7 +172,7 @@ EndFunc   ;==>captureDOWN
 
 
 ;~ HotKeySet("{ENTER}", "captureENTER")
-Func captureENTER()
+Func captureENTER2()
     If WinGetHandle("") <> $Terminal Then
         HotKeySet("{ENTER}")
         Send("{ENTER}")
@@ -177,10 +192,43 @@ Func captureENTER()
         Return
     EndIf
 	For $i = 0 To $MACRO_PER_BANK - 1
-		If $a = $iMcr[$i] Then
-			macroSend($BankFirst + $i)
-			Return
-		EndIf
+            If $a = $iMcr[$i] Then
+                macroSend($BankFirst + $i)
+                Return
+            EndIf
+	Next
+    HotKeySet("{ENTER}")
+    Send("{ENTER}")
+    HotKeySet("{ENTER}", "captureENTER")
+    Return
+
+EndFunc   ;==>captureENTER
+
+Func captureENTER()
+    local $h = WinGetHandle("")
+    If $h <> $Terminal and $h <> $MacroWindow Then
+        HotKeySet("{ENTER}")
+        Send("{ENTER}")
+        HotKeySet("{ENTER}", "captureENTER")
+        Return
+    EndIf
+    Local $a
+    $a = ControlGetHandle($h, "", ControlGetFocus($h))
+    $a = _WinAPI_GetDlgCtrlID($a)
+    if $a = $editRX then
+;~         if
+;~         EndIf
+    EndIf
+    If $a = $inputTX Then
+;~     ConsoleWrite("ENTER!!!" & @CRLF)
+        sendInputData()
+        Return
+    EndIf
+	For $i = 0 To $MACRO_PER_BANK - 1
+            If $a = $iMcr[$i] Then
+                macroSend($BankFirst + $i)
+                Return
+            EndIf
 	Next
     HotKeySet("{ENTER}")
     Send("{ENTER}")
@@ -191,12 +239,16 @@ EndFunc   ;==>captureENTER
 
 local $__initTime = TimerInit()
 
+
+Global $WindowWidth = 585, $WindowHeight = 666
+Global $WinPosX, $WinPosY
+
 local $TermTitle = "SRLabs Terminal - " & FileGetVersion(@ScriptFullPath)
 
-
+; =========================================================================
 #region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
 ;$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath), 654, 666, -1, -1, -1, -1)
-$Terminal = GUICreate($TermTitle, 585, 666, -1, -1, -1, $WS_EX_ACCEPTFILES)
+$Terminal = GUICreate($TermTitle, $WindowWidth, $WindowHeight, -1, -1, -1, $WS_EX_ACCEPTFILES)
 
 $Connection = GUICtrlCreateGroup("", 0, 0, 114, 60) ; Connection group
 $bConnect = GUICtrlCreateButton("Connect", 4, 12, 59, 17)
@@ -269,9 +321,10 @@ $bStopLog = GUICtrlCreateButton("Stop", 456, 102, 29, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 $gMacros = GUICtrlCreateGroup("Macros", 492, 60, 93, 64)
-$bMacroWindow = GUICtrlCreateButton("Macro Window ->", 496, 78, 85, 17)
-$bLoadMacro = GUICtrlCreateButton("Load", 496, 102, 39, 17)
-$bSaveMacro = GUICtrlCreateButton("Save", 542, 102, 39, 17)
+$bMacroWindow = GUICtrlCreateButton("Show", 496, 78, 35, 17)
+$checkMcrFloat = GUICtrlCreateCheckbox("Float", 538, 79, 45, 16, $GUI_SS_DEFAULT_CHECKBOX)
+$bLoadMacro = GUICtrlCreateButton("Load", 496, 102, 35, 17)
+$bSaveMacro = GUICtrlCreateButton("Save", 538, 102, 35, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 $editTX = GUICtrlCreateEdit("", 0, 612, 585, 53, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$WS_VSCROLL))
@@ -290,6 +343,7 @@ GUICtrlSetState(-1, $GUI_CHECKED)
 $checkCRLF = GUICtrlCreateCheckbox("+LF", 549, 592, 41, 17)
 GUICtrlSetState(-1, $GUI_CHECKED)
 #endregion ### END Koda GUI section ###
+; =========================================================================
 
 ; Hide VISA radio buttons if VISA32 library is not found on system
 If $VISA32_AVAILABLE = 0 Then GUICtrlSetState($rVISA, $GUI_HIDE)
@@ -298,16 +352,14 @@ If $VISA32_AVAILABLE = 0 Then GUICtrlSetState($rVISA, $GUI_HIDE)
 Global Const $MCR_GRP_TOP = 0, $MCR_GRP_LEFT = 585 + 2, $MCR_GRP_WIDTH = 340, $MCR_ROW_HEIGHT = 24, $MACRO_WIN_WIDTH = $MCR_GRP_WIDTH
 Global $MACRO_INPUT_W = 241, $MACRO_INPUT_DIFF = 36
 
-Global $macroString[$MACRO_NUMBER], $macroRptTime[$MACRO_NUMBER], $macroRpt[$MACRO_NUMBER]
-
-;~ $TerminalMacros = GUICreate("Terminal macros", 663, 683, 193, 130)
+#cs
 $gMacros = GUICtrlCreateGroup("Macros", $MCR_GRP_LEFT, $MCR_GRP_TOP, $MCR_GRP_WIDTH, 17 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)))
 
 ConsoleWrite (stringformat("...init banks\n"))
 
 For $i = 0 to $MACRO_BANKS -1
-    Local $top = $MCR_GRP_TOP + 16
     Local $left = $MCR_GRP_LEFT + 4 , $columnWidth = 32
+    Local $top = $MCR_GRP_TOP + 16
 ;~     $columnWidth = Floor(($MCR_GRP_WIDTH - 8 - 31)/ ($MACRO_BANKS - 1))
     if $i < 9 Then
         $radioBank[$i] = GUICtrlCreateRadio("&"&$i+1, $left+ $columnWidth * $i, $top, 31, 21)
@@ -360,17 +412,19 @@ For $i = 0 To $MACRO_NUMBER - 1
 next
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 GUICtrlSetState($gMacros, $GUI_HIDE)
+#ce
 ; end of macro GUI element declaration
-
+; =========================================================================
+; event initialization
 
 ConsoleWrite (stringformat("...init events\n"))
 
 GUICtrlSetOnEvent($checkTX_CR, "regStoreGUI")
 GUICtrlSetOnEvent($checkCRLF, "regStoreGUI")
 
-GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEvents")
-GUISetOnEvent($GUI_EVENT_MINIMIZE, "SpecialEvents")
-GUISetOnEvent($GUI_EVENT_RESTORE, "SpecialEvents")
+GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEvents", $Terminal)
+GUISetOnEvent($GUI_EVENT_MINIMIZE, "SpecialEvents", $Terminal)
+GUISetOnEvent($GUI_EVENT_RESTORE, "SpecialEvents", $Terminal)
 GUISetOnEvent($GUI_EVENT_DROPPED, "DropParse")
 
 GUICtrlSetOnEvent($rCOM, "ShowCommdialog")
@@ -382,19 +436,22 @@ GUICtrlSetOnEvent($cCOM, "changeCOMport")
 
 GUICtrlSetOnEvent($bConnect, "toggleConnection")
 GUICtrlSetOnEvent($bMacroWindow, "toggleMacrosView")
+GUICtrlSetOnEvent($checkMcrFloat, "toggleMacrosWindow")
 GUICtrlSetOnEvent($cClearRX, "clearRXbuffer")
 
 GUICtrlSetOnEvent($bLoadMacro, "readMacroFile")
 GUICtrlSetOnEvent($bSaveMacro, "writeMacroFile")
 GUICtrlSetOnEvent($editRX, "switchToInputTX")
 
-
 GUICtrlSetOnEvent($checkEnableRXfilter, "changeDelimUsage")
+; =========================================================================
 
-GUISetState(@SW_SHOW)
+regLoadGUI() ; load GUI related variables from registry
+WinMove($Terminal, "", $WinPosX, $WinPosY) ; adjust position of GUI on screen
+GUISetState(@SW_SHOW) ; show window
 
 Opt("GUIOnEventMode", 1)
-ConsoleWrite (stringformat("...init variables\n"))
+ConsoleWrite(StringFormat("Initializing variables...\n"))
 
 Global $GUI_width, $GUI_height
 Global $GUIdimensions = WinGetPos("SRLabs Terminal")
@@ -402,7 +459,7 @@ If Not @error Then
     $GUI_width = $GUIdimensions[2]
     $GUI_height = $GUIdimensions[3]
 Else
-    ConsoleWrite(" Can't get window dimensions, setting random defaults!" & @CRLF)
+    ConsoleWrite(StringFormat(" Can't get window dimensions, setting random defaults!\n"))
     $GUI_width = 565
     $GUI_height = 666
 EndIf
@@ -415,43 +472,86 @@ regLoadLAN()
 If $VISA32_AVAILABLE Then regLoadVISA()
 regLoadRXheadTail()
 regReadMacros()
-regLoadGUI()
+createMacroWindow()
 macrosVisible($ShowMacros)
-;~ makeMacroWindow()
+;~ ConsoleWrite(StringFormat("Initialized.\n"))
+;~ ConsoleWrite(StringFormat("Main window %d, child %d\n", $Terminal, $MacroHandle))
 
 ConsoleWrite (stringformat("Running in %f ms.\n", TimerDiff ($__initTime)))
 
+; =========================================================================
+; MAIN LOOP
+; =========================================================================
+Global $hotkeysSet = 0
+
 Local $temp
 While 1
-	If $mcrRepeat = True And $macroRpt[$mcrRptCur] Then
-		macroSend($mcrRptCur)
-		Local $tInit = TimerInit(), $tLimit = $macroRptTime[$mcrRptCur]
-		While TimerDiff($tInit) < $tLimit
-			Mainloop() ; process input during wait
-			Sleep(10)
-		WEnd
-	Else
-		Mainloop()
-	EndIf
+    If $mcrRepeat = True And $macroRpt[$mcrRptCur] Then
+        macroSend($mcrRptCur)
+        Local $tInit = TimerInit(), $tLimit = $macroRptTime[$mcrRptCur]
+        While TimerDiff($tInit) < $tLimit
+            Mainloop() ; process input during wait
+            Sleep(10)
+        WEnd
+    EndIf
+    Mainloop()
+    Sleep(100)
 WEnd
 
 #include "term_comms.au3"
 #include "term_reg.au3"
 #include "term_macros.au3"
 
+
+
 Func Mainloop()
     Local $i
     ; determine which control has focus
     If WinGetHandle("") == $Terminal Then
-        Local $a, $i, $match = 0
-        HotKeySet("^{DEL}", "clearRXbuffer")
+        Local $a, $match = 0
         $a = ControlGetHandle($Terminal, "", ControlGetFocus($Terminal))
         $a = _WinAPI_GetDlgCtrlID($a)
-        If $a = $inputTX Then
-            HotKeySet("{ENTER}", "captureENTER")
-            HotKeySet("{UP}", "captureUP")
-            HotKeySet("{DOWN}", "captureDOWN")
-        Else
+        if $a <> $hotkeysSet then
+            $hotkeysSet = $a
+            HotKeySet("^{DEL}", "clearRXbuffer")
+            If $a == $inputTX Then
+                HotKeySet("{ENTER}", "captureENTER")
+                HotKeySet("{UP}", "captureUP")
+                HotKeySet("{DOWN}", "captureDOWN")
+            Elseif $MacroWindow == $Terminal and $ShowMacros == 1 then
+                For $i = 0 To $MACRO_NUMBER - 1
+                    If $a = $iMcr[$i] Then
+                        HotKeySet("{ENTER}", "captureENTER")
+                        HotKeySet("{DOWN}")
+                        HotKeySet("{UP}")
+                        $match = 1
+                        ExitLoop
+                    EndIf
+                Next
+                If $match = 0 Then
+                    HotKeySet("{ENTER}")
+                    HotKeySet("{DOWN}")
+                    HotKeySet("{UP}")
+                EndIf
+            Else
+                HotKeySet("{ENTER}")
+                HotKeySet("{DOWN}")
+                HotKeySet("{UP}")
+            EndIf
+        EndIf
+        ; check if main window moved
+        Local $wPos = WinGetPos($Terminal)
+        if ($wPos[0] <> $WinPosX or $wPos[1] <> $WinPosY) Then
+            $WinPosX = $wPos[0]
+            $WinPosY = $wPos[1]
+            regStoreWinPos()
+        EndIf
+    ElseIf $ShowMacros == 1 and $MacrosFloat == 1 and WinGetHandle("") == $MacroHandle Then
+        local $a = ControlGetHandle($MacroHandle, "", ControlGetFocus($MacroHandle))
+        $a = _WinAPI_GetDlgCtrlID($a)
+        if $a <> $hotkeysSet then
+            $hotkeysSet = $a
+            local $match = 0
             For $i = 0 To $MACRO_NUMBER - 1
                 If $a = $iMcr[$i] Then
                     HotKeySet("{ENTER}", "captureENTER")
@@ -467,13 +567,21 @@ Func Mainloop()
                 HotKeySet("{UP}")
             EndIf
         EndIf
+        ; check if macro window moved
+        Local $wPos = WinGetPos($MacroHandle)
+        if $wPos[0] <> $McrWinPosX or $wPos[1] <> $McrWinPosY Then
+            $McrWinPosX = $wPos[0]
+            $McrWinPosY = $wPos[1]
+            regStoreMacroWinPos()
+        EndIf
     Else
+        $hotkeysSet = 0
         HotKeySet("^{DEL}")
         HotKeySet("{ENTER}")
         HotKeySet("{DOWN}")
         HotKeySet("{UP}")
     EndIf
-    If $ConOpen = $connectCOM Or $ConOpen = $connectLAN Then
+    If $ConOpen == $connectCOM or $ConOpen == $connectLAN Then
         readRXbuffer()
     EndIf
     If BitAND(GUICtrlRead($checkEnableRXfilter), $GUI_CHECKED) == $GUI_CHECKED Then
@@ -503,6 +611,8 @@ Func Mainloop()
     EndIf
 EndFunc   ;==>Mainloop
 
+; =========================================================================
+
 
 Func DropParse ()
     Local $fname = @GUI_DragFile, $did = @GUI_DropId
@@ -526,41 +636,67 @@ Func DropParse ()
     EndIf
 EndFunc
 
+Func createMacroWindow()
+    If $ShowMacros == 0 then
+        $MacroWindow = $Terminal
+        return
+    EndIf
+    Local $OriginX, $OriginY, $OrgElemX, $OrgElemY
+    if $MacrosFloat == 1 then
+        $MacroHandle = GUICreate("Macros", $MCR_GRP_WIDTH - 6, 1 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)), $McrWinPosX, $McrWinPosY,BitOR($WS_CAPTION, $WS_SYSMENU), -1, $Terminal)
+        $MacroWindow = $MacroHandle
+        GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEventsChild", $MacroHandle)
+        $OriginX = 0
+        $OriginY = 0
+        $OrgElemX = 2
+        $OrgElemY = 0
+    Else
+        $MacroWindow = $Terminal
+        $OriginX = $MCR_GRP_LEFT
+        $OriginY = $MCR_GRP_TOP
+        $OrgElemX = 4
+        $OrgElemY = 16
+        $gMacros = GUICtrlCreateGroup("Macros", $OriginX, $OriginY, $MCR_GRP_WIDTH, 17 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)))
+    EndIf
 
-Func makeMacroWindow()
-;~     $winMacro = GUICreate("Macros", $MCR_GRP_WIDTH, 650, -1, -1,-1, -1, $Terminal) ; style 0x84ca0000
-    $winMacro = GUICreate("Macros", $MCR_GRP_WIDTH, 650, -1, -1,BitOR($WS_POPUP, $WS_CLIPCHILDREN,$WS_CAPTION), -1, $Terminal)
-    local $a = GUIGetStyle($winMacro)
-    ConsoleWrite (StringFormat("style:%x, ext style:%x\n",$a[0],$a[1]))
-    local $offleft = 0, $offtop = 4
-    local $i
 
-For $i = 0 to $MACRO_BANKS -1
-    Local $top = $offtop
-    Local $left = $offleft + 4 , $columnWidth = 32
-;~     $columnWidth = Floor(($MCR_GRP_WIDTH - 8 - 31)/ ($MACRO_BANKS - 1))
-    $radioBank[$i] = GUICtrlCreateRadio("&"&$i+1, $left+ $columnWidth * $i, $top, 31, 21)
-;~     GUICtrlSetState(-1, $GUI_HIDE)
-    GUICtrlSetOnEvent($radioBank[$i], "changeMacroBank")
-;~     if $i <= 9 then ; first 10 banks get accelerator keys from 1 to 0
-;~         local $j = $i + 1
-;~         if $j = 10 then $j = 0
-;~         addAccelerator("!" & $j, $radioBank[$i])
-;~     EndIf
-Next
-    GUICtrlSetState($radioBank[0], $GUI_CHECKED)
+;~     ConsoleWrite (stringformat("...init banks\n"))
 
+    For $i = 0 to $MACRO_BANKS -1
+        Local $left = $OriginX + $OrgElemX + 4, $columnWidth = 32
+        Local $top = $OriginY + $OrgElemY
+    ;~     $columnWidth = Floor(($MCR_GRP_WIDTH - 8 - 31)/ ($MACRO_BANKS - 1))
+        if $i < 9 Then
+            $radioBank[$i] = GUICtrlCreateRadio("&"&$i+1, $left+ $columnWidth * $i, $top, 31, 21)
+        elseif $i == 9 Then
+            $radioBank[$i] = GUICtrlCreateRadio("1&0", $left+ $columnWidth * $i, $top, 31, 21)
+        Else
+            $radioBank[$i] = GUICtrlCreateRadio($i+1, $left+ $columnWidth * $i, $top, 31, 21)
+        endif
+        GUICtrlSetState(-1, $GUI_HIDE)
+        GUICtrlSetOnEvent($radioBank[$i], "changeMacroBank")
+        if $i <= 9 then ; first 10 banks get accelerator keys from 1 to 0
+            local $j = $i + 1
+            if $j = 10 then $j = 0
+    ;~         addAccelerator("!" & $j, $radioBank[$i])
+        EndIf
+    Next
+    GUICtrlSetState($radioBank[$curMbank], $GUI_CHECKED)
+
+;~     ConsoleWrite (stringformat("...init macros\n"))
     For $i = 0 To $MACRO_PER_BANK - 1
         Local $rowHeight = 24
-        Local $top = $offtop + 1*$rowHeight
+        local $left = $OriginX + $OrgElemX
+        Local $top = $OriginY + $OrgElemY + 1*$rowHeight
         local $yoff = Mod($i, $MACRO_PER_BANK)
-        $iMcr[$i] = GUICtrlCreateInput("", $offleft + 4, $top + ($MCR_ROW_HEIGHT * $yoff), $MACRO_INPUT_W, 21)
-        GUICtrlSetState(-1,  $GUI_DROPACCEPTED)
-        $bMcrSend[$i] = GUICtrlCreateButton("M" & $i + 1, $offleft + 248, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
+        $iMcr[$i] = GUICtrlCreateInput("", $left, $top + ($MCR_ROW_HEIGHT * $yoff), $MACRO_INPUT_W, 21)
+;~         GUICtrlSetState(-1, $GUI_HIDE + $GUI_DROPACCEPTED)
+        GUICtrlSetState(-1, $GUI_DROPACCEPTED)
+        $bMcrSend[$i] = GUICtrlCreateButton("M" & $i + 1, $left + 244, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
+        GUICtrlSetState(-1, $GUI_HIDE)
+        $iMcrRT[$i] = GUICtrlCreateInput("1000", $left + 280, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21, -1)
 ;~         GUICtrlSetState(-1, $GUI_HIDE)
-        $iMcrRT[$i] = GUICtrlCreateInput("1000", $offleft + 284, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
-;~         GUICtrlSetState(-1, $GUI_HIDE)
-        $checkMcrRsend[$i] = GUICtrlCreateCheckbox("", $offleft + 321, $top + 2 + ($MCR_ROW_HEIGHT * $yoff), 17, 17)
+        $checkMcrRsend[$i] = GUICtrlCreateCheckbox("", $left + 317, $top + 2 + ($MCR_ROW_HEIGHT * $yoff), 17, 17)
 ;~         GUICtrlSetState(-1, $GUI_HIDE)
         GUICtrlSetOnEvent($bMcrSend[$i], "macroEventSend")
         GUICtrlSetOnEvent($iMcr[$i], "macroEventSend")
@@ -568,29 +704,65 @@ Next
         GUICtrlSetOnEvent($checkMcrRsend[$i], "macroRepeatSend")
         if $i < 12 then
             local $j = $i + 1
-;~             addAccelerator("{F"&$j&"}",$iMcr[$i])
+            addAccelerator("{F"&$j&"}",$bMcrSend[$i])
+            GUICtrlSetTip($bMcrSend[$i], "Shortcut: F"&$j)
         elseif $i < 24 Then
             local $j = $i - 11
-;~             addAccelerator("+{F"&$j&"}",$iMcr[$i])
+            addAccelerator("+{F"&$j&"}",$bMcrSend[$i])
+            GUICtrlSetTip($bMcrSend[$i], "Shortcut: Shift+F"&$j)
         EndIf
-
     Next
-    For $i = 0 To $MACRO_NUMBER - 1
-        $macroRptTime[$i] = 1000
-        $macroRpt[$i] = 0
-    next
-	GUICtrlSetState($gMacros, $GUI_HIDE)
-	GUISetState(@SW_SHOW)
-	GUISetOnEvent($GUI_EVENT_CLOSE, "closeMacroWindow")
-; end of macro GUI element declaration
+    changeMacroBank() ; update all data
+    GUICtrlCreateGroup("", -99, -99, 1, 1)
+    if $MacrosFloat == 1 then
+        GUISetState(@SW_SHOW) ; show child Window
 
+    EndIf
 EndFunc
 
 
 Func closeMacroWindow()
-;~     ConsoleWrite(StringFormat("Tuki.\n"))
-    GUIDelete($winMacro)
+;~     ConsoleWrite(StringFormat("Main window %d, child %d\n", $Terminal, $MacroHandle))
+;~     ConsoleWrite(StringFormat("Close macro window.\n"))
+    if $Terminal <> $MacroHandle and $MacroHandle <> 0 Then GUIDelete($MacroHandle)
+    $MacroHandle = 0
+    $MacroWindow = $Terminal
 EndFunc
+
+
+Func macrosVisible($_on)
+    Local $i, $task = $GUI_HIDE, $task2 = $GUI_HIDE
+;~     Local $wPos = WinGetPos("SRLabs Terminal")
+    Local $wPos = WinGetPos($Terminal)
+    if @error then
+        ConsoleWrite(StringFormat("Window not found.\n"))
+    endif
+    If $ShowMacros And $MacrosFloat == 0 Then $task = $GUI_SHOW
+    If $ShowMacros Then $task2 = $GUI_SHOW
+    If $ShowMacros == 1 And $MacrosFloat == 0 Then
+        WinMove($Terminal, "", $wPos[0], $wPos[1], $GUI_width + $MACRO_WIN_WIDTH + 1, $GUI_height)
+        GUICtrlSetData($bMacroWindow, "Hide")
+    Elseif ($ShowMacros == 1 And $MacrosFloat == 1) then
+        WinMove($Terminal, "", $wPos[0], $wPos[1], $GUI_width, $GUI_height)
+        GUICtrlSetData($bMacroWindow, "Close")
+    Else
+        WinMove($Terminal, "", $wPos[0], $wPos[1], $GUI_width, $GUI_height)
+        GUICtrlSetData($bMacroWindow, "Show")
+    EndIf
+    For $i = 0 to $MACRO_BANKS - 1
+        GUICtrlSetState($radioBank[$i], $task2)
+    Next
+    For $i = 0 To $MACRO_PER_BANK - 1
+            GUICtrlSetPos($iMcr[$i], Default, Default, $MACRO_INPUT_W)
+            GUICtrlSetState($iMcr[$i],$task2 + $GUI_DROPACCEPTED) ;--
+            GUICtrlSetState($bMcrSend[$i], $task2) ;--
+            GUICtrlSetState($iMcrRT[$i], $task2) ;--
+            GUICtrlSetState($checkMcrRsend[$i], $task2) ; --
+    Next
+    GUICtrlSetState($gMacros, $task)
+    Return
+EndFunc   ;==>macrosVisible
+
 
 
 Func CalcFirstMacroInBank()
@@ -639,6 +811,14 @@ Func SpecialEvents()
         Case $GUI_EVENT_MINIMIZE
 
         Case $GUI_EVENT_RESTORE
+    EndSwitch
+EndFunc   ;==>SpecialEvents
+
+
+Func SpecialEventsChild()
+    Switch @GUI_CtrlId
+        Case $GUI_EVENT_CLOSE
+            toggleMacrosView()
     EndSwitch
 EndFunc   ;==>SpecialEvents
 

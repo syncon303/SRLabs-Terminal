@@ -79,13 +79,33 @@ EndFunc   ;==>writeMacroFile
 
 Func toggleMacrosView()
     $ShowMacros = 1 - $ShowMacros
+    if $ShowMacros == 0 and $MacrosFloat == 1 then
+        closeMacroWindow()
+    elseif $ShowMacros == 1 then
+        createMacroWindow()
+    EndIf
     macrosVisible($ShowMacros)
     regStoreMacroVisibility()
 EndFunc   ;==>toggleMacrosView
 
 
+Func toggleMacrosWindow()
+    If BitAND(GUICtrlRead($checkMcrFloat), $GUI_CHECKED) == $GUI_CHECKED Then
+        $MacrosFloat = 1
+    else
+        $MacrosFloat = 0
+    endif
+    if ($ShowMacros == 1) Then
+        if $MacrosFloat == 0 then closeMacroWindow()
+        createMacroWindow()
+        macrosVisible($ShowMacros)
+    EndIf
+    regStoreMacroVisibility()
+EndFunc   ;==>toggleMacrosView
+
+
 Func parseMacroEntry($_mcrNo)
-	$macroString[$_mcrNo] = GUICtrlRead($iMcr[$_mcrNo-$BankFirst])
+    $macroString[$_mcrNo] = GUICtrlRead($iMcr[$_mcrNo-$BankFirst])
     regStoreMacro($_mcrNo)
 EndFunc   ;==>parseMacroEntry
 
@@ -293,46 +313,22 @@ Func changeMacroBank ()
         $bank += 1
     Next
     if $bank < $MACRO_BANKS then
-		$curMbank = $bank
-		$BankFirst = $curMbank * $MACRO_PER_BANK
-		For $i = 0 To $MACRO_PER_BANK - 1
-			GUICtrlSetData($iMcr[$i], $macroString[$i + $BankFirst]) ; macro input
-			GUICtrlSetData($bMcrSend[$i], "M" & ($i + $BankFirst + 1)) ; button name
-			GUICtrlSetData($iMcrRT[$i], $macroRptTime[$i + $BankFirst]) ; repeat time
-			if $macroRptTime[$i + $BankFirst] Then ; repeat checkbox
-				GUICtrlSetData($checkMcrRsend[$i], $GUI_CHECKED)
-			Else
-				GUICtrlSetData($checkMcrRsend[$i], $GUI_UNCHECKED)
-			EndIf
-		Next
+        $curMbank = $bank
+        $BankFirst = $curMbank * $MACRO_PER_BANK
+        For $i = 0 To $MACRO_PER_BANK - 1
+            GUICtrlSetData($iMcr[$i], $macroString[$i + $BankFirst]) ; macro input
+            GUICtrlSetData($bMcrSend[$i], "M" & ($i + $BankFirst + 1)) ; button name
+            GUICtrlSetData($iMcrRT[$i], $macroRptTime[$i + $BankFirst]) ; repeat time
+            if $macroRptTime[$i + $BankFirst] Then ; repeat checkbox
+                GUICtrlSetData($checkMcrRsend[$i], $GUI_CHECKED)
+            Else
+                GUICtrlSetData($checkMcrRsend[$i], $GUI_UNCHECKED)
+            EndIf
+        Next
     EndIf
+    regStoreMacroBank()
 EndFunc
 
-
-Func macrosVisible($_on)
-    Local $i, $task = $GUI_HIDE
-    Local $wPos = WinGetPos("SRLabs Terminal")
-    If $_on Then $task = $GUI_SHOW
-    If $_on = 1 Then
-        WinMove("SRLabs Terminal", "", $wPos[0], $wPos[1], $GUI_width + $MACRO_WIN_WIDTH + 1, $GUI_height)
-        GUICtrlSetData($bMacroWindow, "Hide Macros <-")
-    Else
-        WinMove("SRLabs Terminal", "", $wPos[0], $wPos[1], $GUI_width, $GUI_height)
-        GUICtrlSetData($bMacroWindow, "Show Macros ->")
-    EndIf
-    For $i = 0 to $MACRO_BANKS - 1
-        GUICtrlSetState($radioBank[$i], $task)
-    Next
-	For $i = 0 To $MACRO_PER_BANK - 1
-		GUICtrlSetPos($iMcr[$i], Default, Default, $MACRO_INPUT_W)
-		GUICtrlSetState($iMcr[$i],$task + $GUI_DROPACCEPTED) ;--
-		GUICtrlSetState($bMcrSend[$i], $task) ;--
-		GUICtrlSetState($iMcrRT[$i], $task) ;--
-		GUICtrlSetState($checkMcrRsend[$i], $task) ; --
-	Next
-	GUICtrlSetState($gMacros, $task)
-    Return
-EndFunc   ;==>macrosVisible
 
 
 
