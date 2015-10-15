@@ -1,0 +1,7 @@
+SRLterm can import Br@y terminal macro files.
+
+If migrating from Br@y terminal:
+- in Br@y save the existing macros into file 
+- open SRLterm and select the macro bank you wish to overwrite
+- load the Br@y macro file 
+- optionally load other Br@y macro files to other banks

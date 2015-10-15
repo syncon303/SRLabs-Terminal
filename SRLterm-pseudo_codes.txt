@@ -1,0 +1,51 @@
+Spider RooM Labs Terminal 
+pseudo-codes
+valid for v0.9.0.42
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Characters:
+
+$<2_hex_digits> - inserts a character value represented by the hex digits
+#<3_dec_digits> - inserts a character value represented by three decimal digits
+
+%CRLF - inserts carriage return and linefeed characters into the string
+%LF - inserts linefeed character into the string
+%CR - inserts carriage return character into the string
+
+%DLY<4_digit_ms_value> - inserts delay of specified time
+
+%M<number> - send a string associated with the given macro number. 
+		Number has to be either 2 or 3 digits long (for macro M1 
+		specify %M01);
+
+#-- - is used for in-line comment. The string following comment delimiter will not be sent 
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Scripting commands:
+
+%file=<path_to_file> - executes a script file as a series of commands
+
+%tail=<string> - specify the expected tail of the message 
+		which terminal can detect to determine the end of reply.
+		String can contain escape sequences for common control characters
+		(\n,\r,...)
+		
+
+%tailon/%tailoff - enables / disables the tail detection
+
+Note: Using tail is simple way to execute script files fast since it allows the terminal to
+determine exact moment when the reply to a previous command is received. Without it the
+scripts have to contain manual delays between commands, which renders the scripts slow and
+less readable.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Escape character inclusion:
+If any of the escape characters are required to be sent in the string, put additional escape
+character in the string (string '##' will therefore send '#')
+
+Quotes:
+if a string or part of the string is given in quotes, the part in quotes will not be parsed.
+if quotes are required in the string, surround the desired quote characters inside different
+quote characters(double quotes vs. single quotes).
