@@ -6,6 +6,7 @@
 Func readMacroFile()
     Local $path
     Local $hFile, $expectMacro = 1, $par = 0, $skip = 0, $no, $a
+    Local $isBray = 0
     HotKeySet("{ENTER}")
     $path = FileOpenDialog("Open macro file", $macroDirectory, "Macro file (*.tmf)|Text files (*.txt)|All files (*.*)", 3, "*.tmf", $Terminal)
     HotKeySet("{ENTER}", "captureENTER")
@@ -28,12 +29,20 @@ Func readMacroFile()
                     EndIf
                 EndIf
                 If String(Number($a[1])) = $a[1] And ($a[1] > 0) And ($a[1] <= $MACRO_NUMBER) Then
-                    $no = $a[1] - 1
+                    ; if Br@y terminal file, overwrite current macro bank
+                    if $isBray Then
+                        $no = $BankFirst + $a[1] - 1
+                    Else
+                        $no = $a[1] - 1
+                    EndIf
                     $expectMacro = 0
                 Else
                     $par = 0
                     ContinueLoop
                 EndIf
+            Elseif StringInStr($line, "# Terminal macro file") == 1 then
+                $isBray = 1
+                CalcFirstMacroInBank() ; calculate $bankFirst variable
             EndIf
         Else
             $macroString[$no] = $line

@@ -28,7 +28,7 @@ EndFunc   ;==>sendInputData
 ; - %M12  -> insert macro
 
 
-Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
+Func parseString($_str, $_reentrNo = 0, $DEBUG = 1)
     Const $MAX_CMDS = 100
     Const $MAX_REENTRY = 10
     Local $cmd[$MAX_CMDS], $meta[$MAX_CMDS], $cmdNo = 0, $i
@@ -72,16 +72,17 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
             ElseIf $token = "$" Then
                 ; check for double hexadecimal characters
                 Local $a = $char & StringLeft($str, 1)
-                If StringLen($a) = 2 And StringIsXDigit($a) Then
+                If StringLen($a) == 2 And StringIsXDigit($a) Then
                     $cmd[$cmdNo] &= Chr(Dec($a))
                     $str = StringTrimLeft($str, 1)
                     $token = ""
                     ; check for newline sequence
-                    If $newline <> "" And StringRight($cmd[$cmdNo], StringLen($newline)) = $newline Then
-                        ; assume new command
-                        $cmdNo += 1
-                    EndIf
+;~                     If $newline <> "" And StringRight($cmd[$cmdNo], StringLen($newline)) = $newline Then
+;~                         ; assume new command
+;~                         $cmdNo += 1
+;~                     EndIf
                 Else
+                    ConsoleWrite("wowowow" & @CRLF)
                     $cmd[$cmdNo] &= $token
                     $token = ""
                     $reentry = 1
@@ -89,11 +90,15 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
             ElseIf $token = "#" Then
                 ; check for three decimal characters
                 Local $a = $char & StringLeft($str, 2)
+                Local $b = $char & StringLeft($str, 1)
                 If StringLen($a) = 3 And StringIsDigit($a) Then
                     $cmd[$cmdNo] &= Chr($a)
                     $str = StringTrimLeft($str, 2)
                     $token = ""
-                Else
+                ElseIf $b == "--" Then ; check for comment
+                    $token = ""
+                    $str = "" ; comment till end of line, so artificially end the parsing
+                else
                     $cmd[$cmdNo] &= $token
                     $token = ""
                     $reentry = 1
@@ -127,17 +132,6 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
                         $reentry = 1
                     EndIf
                     $token = ""
-                ElseIf $char = "P" Then
-                    Local $a = StringLeft($str, 1)
-                    $token = ""
-                    If $a = "1" Then
-                        $str = $_p1 & StringTrimLeft($str, 1) ; add parameter string to main string
-                    ElseIf $a = "2" Then
-                        $str = $_p2 & StringTrimLeft($str, 1) ; add parameter string to main string
-                    Else
-                        $cmd[$cmdNo] &= $token
-                        $reentry = 1
-                    EndIf
                 ElseIf $char = "T" Then
                     Local $a = $char & StringLeft($str, 3)
                     Local $b = $char & StringLeft($str, 5)
@@ -262,18 +256,9 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
             $dbgoffset &= "  "
         Next
         ConsoleWrite(StringFormat("%sOriginal data: '%s', ", $dbgoffset, $_str))
-        ConsoleWrite(StringFormat("param1: '%s', param2: '%s'\r\n", $_p1, $_p2))
         ConsoleWrite(StringFormat("%s>Parse table: \r\n", $dbgoffset))
         For $i = 0 To $cmdNo - 1
             Local $c = $cmd[$i]
-;~ 	    if $i = $cmdNo - 1 and $_reentrNo = 0 Then
-;~ 		If GUICtrlRead ($checkTX_CR) = $GUI_CHECKED Then
-;~ 		    $c &= @CR
-;~ 		    If GUICtrlRead ($checkCRLF) = $GUI_CHECKED Then
-;~ 			$c &= @LF
-;~ 		    EndIf
-;~ 		EndIf
-;~ 	    EndIf
             If $meta[$i] <> "" Then
                 ConsoleWrite(StringFormat("%s  %d -> meta: '%s' = '%s'\r\n", $dbgoffset, $i, $meta[$i], $cmd[$i]))
             Else
@@ -292,10 +277,7 @@ Func parseString($_str, $_p1 = "", $_p2 = "", $_reentrNo = 0, $DEBUG = 1)
             If $_reentrNo < $MAX_REENTRY Then
                 ; get values for macro and parse the macro
                 Local $m = $macroString[$cmd[$i] - 1]
-                Local $mp1 = "", $mp2 = ""
-;~ 				Local $mp1 = $macroStrPar[$cmd[$i] - 1][0]
-;~ 				Local $mp2 = $macroStrPar[$cmd[$i] - 1][1]
-                parseString($m, "", "", $_reentrNo + 1)
+                parseString($m, $_reentrNo + 1)
             EndIf
         Else
             Local $ret = sendData($cmd[$i])
@@ -373,7 +355,7 @@ Func sendData($_str, $_maxRX = 2048, $_first = 1000, $_next = 100, $DEBUG = 1)
         WEnd
     EndIf
     If StringLen($tx) = 0 Then Return 0 ; skip if empty string
-    If $DEBUG Then ConsoleWrite("--> " & $tx)
+    If $DEBUG Then ConsoleWrite("-->(" & StringLen($tx) & "chars) " & $tx )
     If $logEnabled Then FileWrite($hLog, $tx)
 
     If $ConOpen = $connectCOM Then

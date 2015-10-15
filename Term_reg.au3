@@ -260,6 +260,8 @@ Func regReadMacros()
         if $i >= $BankFirst and $i < $BankFirst + $MACRO_PER_BANK then
             GUICtrlSetData($iMcr[$i-$BankFirst], $macroString[$i])
         EndIf
+	$macroRptTime[$i] = 1000
+	$macroRpt[$i] = 0
     Next
 EndFunc   ;==>regReadMacros
 

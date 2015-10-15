@@ -29,6 +29,7 @@ Global $__use_convert_au3 = 1
 #include <Array.au3>
 #include <GuiComboBox.au3>
 #include "COMMs.au3"
+#include <WinAPI.au3>
 
 $DETACH_MACROS = 0
 
@@ -81,12 +82,16 @@ Global $macroString[$MACRO_NUMBER], $macroRptTime[$MACRO_NUMBER], $macroRpt[$MAC
 
 Global $ShowMacros = 0 ; flag signalling if macro objects are drawn on screen/ macro window is opened
 Global $MacroWindow, $MacroHandle ; MacroHandle is window handle, MacroWindow is pointer to either main or macro window
-Global $MacrosFloat = 0 ; Flag signalling the docked(0) / floating(1) macro window
+Global $MacrosFloat = 0 ; Flag signalling either docked(0) / floating(1) macro window
 Global $McrWinPosX = 0,$McrWinPosY = 0 ; on-screen position of floating macro window
 
 ; =========================================================================
-
-
+;  Window stick variables
+; =========================================================================
+Global Const $StickMargin = 6
+Global $StickyX = 0,$StickyY = 0
+$BorderWidth = _WinAPI_GetSystemMetrics(8)
+; =========================================================================
 
 Global $mainTime1 = TimerInit()
 Global $mainState = 0
@@ -248,7 +253,7 @@ local $TermTitle = "SRLabs Terminal - " & FileGetVersion(@ScriptFullPath)
 ; =========================================================================
 #region ### START Koda GUI section ### Form=D:\scripts\Terminal\Terminal2.kxf
 ;$Terminal = GUICreate("SRLabs Terminal - " & FileGetVersion(@ScriptFullPath), 654, 666, -1, -1, -1, -1)
-$Terminal = GUICreate($TermTitle, $WindowWidth, $WindowHeight, -1, -1, -1, $WS_EX_ACCEPTFILES)
+$Terminal = GUICreate($TermTitle, $WindowWidth, $WindowHeight, -1, -1, BitOR($WS_MINIMIZEBOX, $WS_CAPTION, $WS_POPUP, $WS_SYSMENU, $WS_BORDER), $WS_EX_ACCEPTFILES)
 
 $Connection = GUICtrlCreateGroup("", 0, 0, 114, 60) ; Connection group
 $bConnect = GUICtrlCreateButton("Connect", 4, 12, 59, 17)
@@ -352,68 +357,6 @@ If $VISA32_AVAILABLE = 0 Then GUICtrlSetState($rVISA, $GUI_HIDE)
 Global Const $MCR_GRP_TOP = 0, $MCR_GRP_LEFT = 585 + 2, $MCR_GRP_WIDTH = 340, $MCR_ROW_HEIGHT = 24, $MACRO_WIN_WIDTH = $MCR_GRP_WIDTH
 Global $MACRO_INPUT_W = 241, $MACRO_INPUT_DIFF = 36
 
-#cs
-$gMacros = GUICtrlCreateGroup("Macros", $MCR_GRP_LEFT, $MCR_GRP_TOP, $MCR_GRP_WIDTH, 17 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)))
-
-ConsoleWrite (stringformat("...init banks\n"))
-
-For $i = 0 to $MACRO_BANKS -1
-    Local $left = $MCR_GRP_LEFT + 4 , $columnWidth = 32
-    Local $top = $MCR_GRP_TOP + 16
-;~     $columnWidth = Floor(($MCR_GRP_WIDTH - 8 - 31)/ ($MACRO_BANKS - 1))
-    if $i < 9 Then
-        $radioBank[$i] = GUICtrlCreateRadio("&"&$i+1, $left+ $columnWidth * $i, $top, 31, 21)
-    elseif $i == 9 Then
-        $radioBank[$i] = GUICtrlCreateRadio("1&0", $left+ $columnWidth * $i, $top, 31, 21)
-    Else
-        $radioBank[$i] = GUICtrlCreateRadio($i+1, $left+ $columnWidth * $i, $top, 31, 21)
-    endif
-    GUICtrlSetState(-1, $GUI_HIDE)
-    GUICtrlSetOnEvent($radioBank[$i], "changeMacroBank")
-    if $i <= 9 then ; first 10 banks get accelerator keys from 1 to 0
-        local $j = $i + 1
-        if $j = 10 then $j = 0
-;~         addAccelerator("!" & $j, $radioBank[$i])
-    EndIf
-Next
-    GUICtrlSetState($radioBank[0], $GUI_CHECKED)
-
-ConsoleWrite (stringformat("...init macros\n"))
-For $i = 0 To $MACRO_PER_BANK - 1
-	Local $rowHeight = 24
-	Local $top = $MCR_GRP_TOP + 16 + 1*$rowHeight
-	local $yoff = Mod($i, $MACRO_PER_BANK)
-	$iMcr[$i] = GUICtrlCreateInput("", $MCR_GRP_LEFT + 4, $top + ($MCR_ROW_HEIGHT * $yoff), $MACRO_INPUT_W, 21)
-	GUICtrlSetState(-1, $GUI_HIDE + $GUI_DROPACCEPTED)
-	$bMcrSend[$i] = GUICtrlCreateButton("M" & $i + 1, $MCR_GRP_LEFT + 248, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21)
-	GUICtrlSetState(-1, $GUI_HIDE)
-	$iMcrRT[$i] = GUICtrlCreateInput("1000", $MCR_GRP_LEFT + 284, $top + ($MCR_ROW_HEIGHT * $yoff), 33, 21, -1)
-	GUICtrlSetState(-1, $GUI_HIDE)
-	$checkMcrRsend[$i] = GUICtrlCreateCheckbox("", $MCR_GRP_LEFT + 321, $top + 2 + ($MCR_ROW_HEIGHT * $yoff), 17, 17)
-	GUICtrlSetState(-1, $GUI_HIDE)
-	GUICtrlSetOnEvent($bMcrSend[$i], "macroEventSend")
-	GUICtrlSetOnEvent($iMcr[$i], "macroEventSend")
-
-	GUICtrlSetOnEvent($checkMcrRsend[$i], "macroRepeatSend")
-	if $i < 12 then
-		local $j = $i + 1
-		addAccelerator("{F"&$j&"}",$bMcrSend[$i])
-                GUICtrlSetTip($bMcrSend[$i], "Shortcut: F"&$j)
-	elseif $i < 24 Then
-		local $j = $i - 11
-		addAccelerator("+{F"&$j&"}",$bMcrSend[$i])
-                GUICtrlSetTip($bMcrSend[$i], "Shortcut: Shift+F"&$j)
-	EndIf
-
-Next
-For $i = 0 To $MACRO_NUMBER - 1
-	$macroRptTime[$i] = 1000
-	$macroRpt[$i] = 0
-next
-GUICtrlCreateGroup("", -99, -99, 1, 1)
-GUICtrlSetState($gMacros, $GUI_HIDE)
-#ce
-; end of macro GUI element declaration
 ; =========================================================================
 ; event initialization
 
@@ -542,8 +485,14 @@ Func Mainloop()
         ; check if main window moved
         Local $wPos = WinGetPos($Terminal)
         if ($wPos[0] <> $WinPosX or $wPos[1] <> $WinPosY) Then
+            checkWindowStick()
             $WinPosX = $wPos[0]
             $WinPosY = $wPos[1]
+            local $moved  = windowStickMove($McrWinPosX,$McrWinPosY)
+            if $moved Then
+                WinMove($MacroHandle, "", $McrWinPosX, $McrWinPosY)
+                regStoreMacroWinPos()
+            EndIf
             regStoreWinPos()
         EndIf
     ElseIf $ShowMacros == 1 and $MacrosFloat == 1 and WinGetHandle("") == $MacroHandle Then
@@ -572,6 +521,11 @@ Func Mainloop()
         if $wPos[0] <> $McrWinPosX or $wPos[1] <> $McrWinPosY Then
             $McrWinPosX = $wPos[0]
             $McrWinPosY = $wPos[1]
+            checkWindowStick()
+            local $moved  = windowStickMove($McrWinPosX,$McrWinPosY)
+            if $moved Then
+                WinMove($MacroHandle, "", $McrWinPosX, $McrWinPosY)
+            EndIf
             regStoreMacroWinPos()
         EndIf
     Else
@@ -643,7 +597,7 @@ Func createMacroWindow()
     EndIf
     Local $OriginX, $OriginY, $OrgElemX, $OrgElemY
     if $MacrosFloat == 1 then
-        $MacroHandle = GUICreate("Macros", $MCR_GRP_WIDTH - 6, 1 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)), $McrWinPosX, $McrWinPosY,BitOR($WS_CAPTION, $WS_SYSMENU), -1, $Terminal)
+        $MacroHandle = GUICreate("Macros", $MCR_GRP_WIDTH - 6, 1 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)), $McrWinPosX, $McrWinPosY,BitOR($WS_CAPTION, $WS_BORDER, $WS_SYSMENU), -1, $Terminal)
         $MacroWindow = $MacroHandle
         GUISetOnEvent($GUI_EVENT_CLOSE, "SpecialEventsChild", $MacroHandle)
         $OriginX = 0
@@ -716,7 +670,7 @@ Func createMacroWindow()
     GUICtrlCreateGroup("", -99, -99, 1, 1)
     if $MacrosFloat == 1 then
         GUISetState(@SW_SHOW) ; show child Window
-
+        checkWindowStick()
     EndIf
 EndFunc
 
@@ -727,6 +681,7 @@ Func closeMacroWindow()
     if $Terminal <> $MacroHandle and $MacroHandle <> 0 Then GUIDelete($MacroHandle)
     $MacroHandle = 0
     $MacroWindow = $Terminal
+    checkWindowStick()
 EndFunc
 
 
@@ -783,6 +738,73 @@ Func changeDelimUsage()
 ;~     EndIf
 EndFunc   ;==>changeDelimUsage
 
+Func checkWindowStick($main = 0)
+    if Not $ShowMacros or Not $MacrosFloat then
+        $StickyX = 0
+        $StickyY = 0
+        Return
+    EndIf
+    if $main then
+        return
+    EndIf
+    local $x, $y
+    ; check X- stick
+    $x = $WinPosX - ($McrWinPosX + $MCR_GRP_WIDTH - 6) - 2*$BorderWidth
+    ConsoleWrite(StringFormat("stick -X = %d\r\n", $x))
+    If $x <= $StickMargin and $x >= -$StickMargin then
+        $StickyX = -1
+    Else
+        $x = $McrWinPosX - ($WinPosX + $WindowWidth + 2*$BorderWidth)
+        ConsoleWrite(StringFormat("stick +X = %d\r\n", $x))
+        ; check X+ stick
+        If $x <= $StickMargin and $x >= -$StickMargin then
+            $StickyX = 1
+        else
+            $StickyX = 0
+        EndIf
+    Endif
+    If $StickyX then
+        ; check top corner stick(if X stick)
+        $y = $WinPosY - $McrWinPosY
+        ConsoleWrite(StringFormat("stick top = %d\r\n", $y))
+        If $y <= $StickMargin and $y >= -$StickMargin then
+            $StickyY = -1
+        else
+            ; check bottom corner stick (if X stick)
+            $y = $WinPosY + $WindowHeight - ($McrWinPosY +  1 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)))
+            ConsoleWrite(StringFormat("stick bottom = %d\r\n", $y))
+            If $y <= $StickMargin and $y >= -$StickMargin then
+                $StickyY = 1
+            else
+                $StickyY = 0
+            EndIf
+        EndIf
+    EndIf
+EndFunc
+
+
+Func windowStickMove(ByRef $_mcrX, ByRef $_mcrY)
+    local $x, $y
+    if Not $ShowMacros or Not $MacrosFloat then
+        Return
+    EndIf
+    if $StickyX == -1 then
+        $_mcrX = $WinPosX - ($MCR_GRP_WIDTH - 6) - 2*$BorderWidth
+    Elseif $StickyX == 1 then
+        $_mcrX = $WinPosX + $WindowWidth + 2*$BorderWidth
+    else
+        return 0
+    Endif
+    If $StickyY == -1 then
+        $_mcrY = $WinPosY
+        Return 3
+    ElseIf $StickyY == 1 then
+        $_mcrY = $WinPosY + $WindowHeight - (1 + ($MCR_ROW_HEIGHT * ($MACRO_PER_BANK + 1)))
+        Return 3
+    else
+        return 1
+    EndIf
+EndFunc
 
 
 Func addAccelerator ($_key, $_id, $_refresh = 0)
