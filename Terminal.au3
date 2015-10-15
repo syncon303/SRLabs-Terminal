@@ -38,8 +38,15 @@ Global $DesktopWidth = _WinAPI_GetSystemMetrics(78)
 Global $DesktopLeft = _WinAPI_GetSystemMetrics(76)
 Global $DesktopHeight = _WinAPI_GetSystemMetrics(79)
 Global $DesktopTop = _WinAPI_GetSystemMetrics(77)
+$Border5 = _WinAPI_GetSystemMetrics(5)
+$Border7 = _WinAPI_GetSystemMetrics(7)
+$Border32 = _WinAPI_GetSystemMetrics(32)
+$Border45 = _WinAPI_GetSystemMetrics(45)
+
+Global $BorderWidth = $Border32 - 1
 
 ConsoleWrite(StringFormat("VS L: %d, T:%d, W:%d, H:%d\r\n",$DesktopLeft,$DesktopTop, $DesktopWidth, $DesktopHeight))
+ConsoleWrite(StringFormat("Borders - 5: %d, 7:%d, 32:%d, 45:%d\r\n",$Border5, $Border7, $Border32, $Border45))
 TCPStartup()
 
 Global Enum $connectNone = 0, $connectCOM, $connectLAN, $connectVISA
@@ -96,7 +103,6 @@ Global $McrWinPosX = 0,$McrWinPosY = 0 ; on-screen position of floating macro wi
 ; =========================================================================
 Global Const $StickMargin = 6
 Global $StickyX = 0,$StickyY = 0
-$BorderWidth = _WinAPI_GetSystemMetrics(8)
 ; =========================================================================
 
 ;
@@ -496,6 +502,11 @@ Func Mainloop()
             checkWindowStick()
             $WinPosX = $wPos[0]
             $WinPosY = $wPos[1]
+            if $StickyX == 0 then
+                checkWindowStick()
+            elseif $StickyY == 0 then
+                checkWindowStick(0, 1)
+            EndIf
             ConsoleWrite(StringFormat("Main window position: %d, %d\n", $WinPosX, $WinPosY))
             local $moved  = windowStickMove($McrWinPosX,$McrWinPosY)
             if $moved Then
@@ -747,30 +758,29 @@ Func changeDelimUsage()
 ;~     EndIf
 EndFunc   ;==>changeDelimUsage
 
-Func checkWindowStick($main = 0)
+Func checkWindowStick($main = 0, $skipX = 0)
     if Not $ShowMacros or Not $MacrosFloat then
         $StickyX = 0
         $StickyY = 0
         Return
     EndIf
-    if $main then
-        return
-    EndIf
     local $x, $y
     ; check X- stick
-    $x = $WinPosX - ($McrWinPosX + $MCR_GRP_WIDTH - 6) - 2*$BorderWidth
-    ConsoleWrite(StringFormat("stick -X = %d\r\n", $x))
-    If $x <= $StickMargin and $x >= -$StickMargin then
-        $StickyX = -1
-    Else
-        $x = $McrWinPosX - ($WinPosX + $WindowWidth + 2*$BorderWidth)
-        ConsoleWrite(StringFormat("stick +X = %d\r\n", $x))
-        ; check X+ stick
+    if not $skipX then
+        $x = $WinPosX - ($McrWinPosX + $MCR_GRP_WIDTH - 6) - 2*$BorderWidth
+        ConsoleWrite(StringFormat("stick -X = %d\r\n", $x))
         If $x <= $StickMargin and $x >= -$StickMargin then
-            $StickyX = 1
-        else
-            $StickyX = 0
-        EndIf
+            $StickyX = -1
+        Else
+            $x = $McrWinPosX - ($WinPosX + $WindowWidth + 2*$BorderWidth)
+            ConsoleWrite(StringFormat("stick +X = %d\r\n", $x))
+            ; check X+ stick
+            If $x <= $StickMargin and $x >= -$StickMargin then
+                $StickyX = 1
+            else
+                $StickyX = 0
+            EndIf
+        Endif
     Endif
     If $StickyX then
         ; check top corner stick(if X stick)
@@ -788,6 +798,8 @@ Func checkWindowStick($main = 0)
                 $StickyY = 0
             EndIf
         EndIf
+    Else
+        $StickyY = 0
     EndIf
 EndFunc
 
