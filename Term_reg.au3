@@ -50,11 +50,14 @@ EndFunc   ;==>regLoadDirectories
 
 Func regLoadGUI()
     $WinPosX = RegRead($REG_ROOT, "WindowPositionX")
-    If @error or $WinPosX < -$WindowWidth + 40 or $WinPosX >= @DesktopWidth - 40 Then
+    If @error or $WinPosX < $DesktopLeft -$WindowWidth + 40 or $WinPosX >= $DesktopLeft + $DesktopWidth - 40 Then
+        ConsoleWrite(StringFormat("Main window oopsie on X.\r\n"))
         $WinPosX = (@DesktopWidth - $WindowWidth) / 2
     EndIf
     $WinPosY = RegRead($REG_ROOT, "WindowPositionY")
-    If @error or $WinPosY < -20 or $WinPosY >= @DesktopHeight - 20 Then
+    If @error or $WinPosY < $DesktopTop - 5 or $WinPosY >= $DesktopTop + $DesktopHeight - 20 Then
+        ConsoleWrite(StringFormat("Main window oopsie on Y.\r\n"))
+
         $WinPosY = @DesktopHeight / 10
     EndIf
     ; load newline character settings from registry
@@ -242,11 +245,11 @@ Func regReadMacros()
     EndIf
 
     $McrWinPosX = RegRead($REG_ROOT, "MacroWindowPositionX")
-    If @error or $McrWinPosX < -$MCR_GRP_WIDTH + 40 or $McrWinPosX >= @DesktopWidth - 40 Then
+    If @error or $McrWinPosX < $DesktopLeft - $MCR_GRP_WIDTH + 40 or $McrWinPosX >= $DesktopLeft + $DesktopWidth - 40 Then
         $McrWinPosX = (@DesktopWidth - $MCR_GRP_WIDTH) / 2
     EndIf
     $McrWinPosY = RegRead($REG_ROOT, "MacroWindowPositionY")
-    If @error or $McrWinPosY < -20 or $McrWinPosY >= @DesktopHeight - 20 Then
+    If @error or $McrWinPosY < $DesktopTop - 5  or $McrWinPosY >= $DesktopTop + $DesktopHeight - 10 Then
         $McrWinPosY = @DesktopHeight / 10
     EndIf
     $curMbank = RegRead($REG_ROOT, "CurrentMacroBank")

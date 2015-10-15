@@ -33,7 +33,13 @@ Global $__use_convert_au3 = 1
 
 $DETACH_MACROS = 0
 
+; Get size of virtual screen
+Global $DesktopWidth = _WinAPI_GetSystemMetrics(78)
+Global $DesktopLeft = _WinAPI_GetSystemMetrics(76)
+Global $DesktopHeight = _WinAPI_GetSystemMetrics(79)
+Global $DesktopTop = _WinAPI_GetSystemMetrics(77)
 
+ConsoleWrite(StringFormat("VS L: %d, T:%d, W:%d, H:%d\r\n",$DesktopLeft,$DesktopTop, $DesktopWidth, $DesktopHeight))
 TCPStartup()
 
 Global Enum $connectNone = 0, $connectCOM, $connectLAN, $connectVISA
@@ -92,6 +98,8 @@ Global Const $StickMargin = 6
 Global $StickyX = 0,$StickyY = 0
 $BorderWidth = _WinAPI_GetSystemMetrics(8)
 ; =========================================================================
+
+;
 
 Global $mainTime1 = TimerInit()
 Global $mainState = 0
@@ -488,6 +496,7 @@ Func Mainloop()
             checkWindowStick()
             $WinPosX = $wPos[0]
             $WinPosY = $wPos[1]
+            ConsoleWrite(StringFormat("Main window position: %d, %d\n", $WinPosX, $WinPosY))
             local $moved  = windowStickMove($McrWinPosX,$McrWinPosY)
             if $moved Then
                 WinMove($MacroHandle, "", $McrWinPosX, $McrWinPosY)
