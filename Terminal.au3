@@ -339,7 +339,7 @@ $bStartLog = GUICtrlCreateButton("Start", 420, 102, 29, 17)
 $bStopLog = GUICtrlCreateButton("Stop", 456, 102, 29, 17)
 GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-$gMacros = GUICtrlCreateGroup("Macros", 492, 60, 93, 64)
+$gMcr = GUICtrlCreateGroup("Macros", 492, 60, 93, 64)
 $bMacroWindow = GUICtrlCreateButton("Show", 496, 78, 35, 17)
 $checkMcrFloat = GUICtrlCreateCheckbox("Float", 538, 79, 45, 16, $GUI_SS_DEFAULT_CHECKBOX)
 $bLoadMacro = GUICtrlCreateButton("Load", 496, 102, 35, 17)
@@ -399,6 +399,10 @@ GUICtrlSetOnEvent($cClearRX, "clearRXbuffer")
 GUICtrlSetOnEvent($bLoadMacro, "readMacroFile")
 GUICtrlSetOnEvent($bSaveMacro, "writeMacroFile")
 GUICtrlSetOnEvent($editRX, "switchToInputTX")
+
+GUICtrlSetOnEvent($bSelectLog, "logSelectFile")
+GUICtrlSetOnEvent($bStartLog, "logStartLog")
+GUICtrlSetOnEvent($bStopLog, "logStop")
 
 GUICtrlSetOnEvent($checkEnableRXfilter, "changeDelimUsage")
 ; =========================================================================
@@ -734,7 +738,9 @@ Func macrosVisible($_on)
             GUICtrlSetState($iMcrRT[$i], $task2) ;--
             GUICtrlSetState($checkMcrRsend[$i], $task2) ; --
     Next
-    GUICtrlSetState($gMacros, $task)
+    if IsDeclared("gMacros") then
+        GUICtrlSetState(eval("gMacros"), $task)
+    endif
     Return
 EndFunc   ;==>macrosVisible
 
